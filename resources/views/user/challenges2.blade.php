@@ -94,7 +94,7 @@
                 @endif
 
 
-                let ip_address = 'https://server.akadda.com/';
+                let ip_address = 'https://server.khelakhada.com/';
                 let socket = io(ip_address);
                 socket.emit('initialise_data', true);
                 socket.on('createChallengeClient', (data) => {
@@ -237,7 +237,7 @@
             }
 
             function createSocket() {
-                let socket = io('https://server.akadda.com/');
+                let socket = io('https://server.khelakhada.com/');
                 return socket;
             }
 

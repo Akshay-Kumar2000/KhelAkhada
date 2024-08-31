@@ -54,7 +54,7 @@
                     <div class="d-grid">
                         <a
                             href="whatsapp://send?text=Play Ludo and earn Rs10000 daily.%0ACommission Charge - 5% Only%0AReferral - 3% On All Games%0A24x7 Live Chat Support%0AInstant Withdrawal Via UPI/Bank%0ARegister Now, My refer code is {{ $userData->setting->referral }}.%0A👇%0Ahttps://game.bottomfunnel.net/login?referral={{ $userData->setting->referral }}">
-                            {{-- href="whatsapp://send?text=Play Ludo and earn Rs10000 daily.%0ACommission Charge - 5% Only%0AReferral - 3% On All Games%0A24x7 Live Chat Support%0AInstant Withdrawal Via UPI/Bank%0ARegister Now, My refer code is {{ $userData->setting->referral }}.%0A👇%0Ahttps://akadda.com/login?referral={{ $userData->setting->referral }}"> --}}
+                            {{-- href="whatsapp://send?text=Play Ludo and earn Rs10000 daily.%0ACommission Charge - 5% Only%0AReferral - 3% On All Games%0A24x7 Live Chat Support%0AInstant Withdrawal Via UPI/Bank%0ARegister Now, My refer code is {{ $userData->setting->referral }}.%0A👇%0Ahttps://khelakhada.com/login?referral={{ $userData->setting->referral }}"> --}}
                             <button class="btn btn-success btn-md w-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="1em" height="1em"
                                     fill="currentColor" class="me-2">

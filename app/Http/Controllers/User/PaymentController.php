@@ -228,7 +228,7 @@ class PaymentController
                     "amount": "' . $request->orderAmount . '",
                     "mobile": "' . $user->mobile . '",
                     "orderid": "' . $order_id . '",
-                    "callback_url": "https://akadda.com"
+                    "callback_url": "https://khelakhada.com"
                 }',
                 CURLOPT_HTTPHEADER => array(
                     'Content-Type: application/json',
@@ -262,14 +262,15 @@ class PaymentController
 
             // Prepare the cURL request to the payment gateway
             $postdata = [
-                "loginid" => "6375030393",
-                "apikey" => "hdcupxeg2m",
+                "loginid" => "9257024792",
+                "apikey" => "7pacgmqbzx",
                 "orderid" => $order_id,
                 "amt" => $request->orderAmount,
                 "trxnote" => $user->username,
-                "custmobile" => "8524785698",
-                "redirecturl" => "https://game.bottomfunnel.net/",
-                "mcallback_url" => "https://game.bottomfunnel.net/new-upi-gateway-response"
+                "custmobile" => "8091774412",
+                // "redirecturl" => "https://game.bottomfunnel.net/",
+                "redirecturl" => "http://127.0.0.1:8000/",
+                "mcallback_url" => "https://khelakhada/new-upi-gateway-response"
             ];
 
             $curl = curl_init();
@@ -379,7 +380,8 @@ class PaymentController
                 \Log::info("Processing order ID: " . $payOrder->id);
 
                 $client = new Client();
-                $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php?loginid=6375030393&apikey=hdcupxeg2m&request_id=' . $payOrder->order_id);
+                // $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php?loginid=6375030393&apikey=hdcupxeg2m&request_id=' . $payOrder->order_id);
+                $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php?loginid=9257024792&apikey=7pacgmqbzx&request_id=' . $payOrder->order_id);
 
                 if ($res->getStatusCode() == 200) {
                     $response_data = $res->getBody()->getContents();

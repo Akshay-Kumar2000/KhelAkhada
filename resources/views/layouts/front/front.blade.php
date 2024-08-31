@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="{{ asset('front/images/khelmoj123.png') }}" />
-    <title>AK Adda| Khelo Dil se, Jeeto Dimag se</title>
+    <link rel="icon" href="{{ asset('front/images/KhelAkhada.jpeg') }}" />
+    <title>KhelAkhada| Khelo Dil se, Jeeto Dimag se</title>
     <meta content="KhelBro" name="description">
     <meta name="robots" content="noindex">
     <meta

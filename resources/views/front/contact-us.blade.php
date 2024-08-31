@@ -10,12 +10,12 @@
    
    <a href="{{url('')}}"><i class="fa fa-globe" aria-hidden="true"></i> {{url('')}}</a>
    
-   <a href="mailto:support@akadda.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> support@akadda.com</a>
+   <a href="mailto:support@khelakhada.com"><i class="fa fa-envelope-o" aria-hidden="true"></i> support@khelakhada.com</a>
    
    
    <h6>To submit your game write to us:</h6>
    
-   <a href="mailto:support@akadda.com"><i class="fa fa-envelope-o" aria-hidden="true"></i>support@akadda.com</a>
+   <a href="mailto:support@khelakhada.com"><i class="fa fa-envelope-o" aria-hidden="true"></i>support@khelakhada.com</a>
    
    
              </div>
