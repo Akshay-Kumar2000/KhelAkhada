@@ -46,7 +46,6 @@
                                 </div>
                                 <input class="form-control" id="mobile-no" name="mobile" type="tel"
                                     placeholder="Mobile number" value="">
-
                             </div>
 
                             <div class="input-group pt-2" id="verify-otp-div" style="display:none">
@@ -56,12 +55,17 @@
                                 <input class="form-control" id="verify-otp" name="otp" type="tel"
                                     placeholder="Enter OTP" autocomplete="off" value="">
                             </div>
+
+                            <input type="submit" value="Submit" class="submit-signup" />
+                            <div id="otp-container">
+                                <!-- OTP input fields and submit button -->
+                                <span id="timer" style="display:none;">30</span>
+                                <button id="resend-otp" style="display:none;" onclick="resendOtp()"
+                                    class="submit-signup">Resend OTP</button>
+                            </div>
+
                         </div>
-                        <input type="submit" value="Submit" class="submit-signup" />
                     </div>
-
-
-
                 </form>
                 <p></p>
                 <p style="color:white;margin-left:50px;margin-right:30px">By proceeding, you agree to our <a
@@ -93,10 +97,11 @@
 
                 $('#login-form').submit(function(e) {
                     e.preventDefault();
-
                     var mobile = $('#mobile-no').val();
                     var otp = $('#verify-otp').val();
                     var flag = 1;
+
+                    // Validations (unchanged)
                     if (!mobile) {
                         hideSuccessErrorDiv('alert-success', 'alert-danger', 'Please enter mobile number');
                         flag = 0;
@@ -112,56 +117,69 @@
                     if (otp && !$.isNumeric(otp)) {
                         hideSuccessErrorDiv('alert-success', 'alert-danger', 'Please enter numeric value');
                         flag = 0;
-                        $('#verify-otp').val('')
+                        $('#verify-otp').val('');
                     } else if (otp && otp.length != 6) {
                         hideSuccessErrorDiv('alert-success', 'alert-danger', 'Please enter 6 digit OTP');
                         flag = 0;
-                        $('#verify-otp').val('')
+                        $('#verify-otp').val('');
                     }
 
                     if (flag) {
-                        $form = $(this);
-
                         $.ajax({
                             type: "POST",
                             dataType: 'json',
                             url: '{{ route('login') }}',
-                            data: $form.serialize(),
+                            data: $(this).serialize(),
                             beforeSend: function() {
                                 $('.loading').show();
                             },
                             success: function(data) {
-                                console.log(data);
                                 if (data.status == 1) {
                                     hideSuccessErrorDiv('alert-danger', 'alert-success', data
                                         .message);
                                     $('#verify-otp').val('');
                                     $('#verify-otp-div').show();
                                     $('#mobile-no').attr('readonly', 'readonly');
-                                }
-
-                                if (data.status == 2) {
+                                    startTimer(); // Start the timer when OTP is generated
+                                } else if (data.status == 2) {
                                     window.location.href = data.url;
                                 }
                             },
-                            error: function(data) {
-                                console.log(data);
-                                //alert(data.responseJSON.message);
-                                hideSuccessErrorDiv('alert-success', 'alert-danger', data
-                                    .responseJSON.message);
+                            error: function(xhr) {
+                                console.error("Error Response: ", xhr.responseText);
+                                var errorMessage = xhr.responseJSON ? xhr.responseJSON.message :
+                                    "An error occurred";
+                                hideSuccessErrorDiv('alert-success', 'alert-danger', errorMessage);
                                 $('#verify-otp').val('');
                             },
-                            complete: function(data) {
-                                //    $('.loading').hide();
-                                //    $('#withDraw')[0].reset();
-                                // 	$("#withDraw").trigger("reset");
-                                //location.reload();
+                            complete: function() {
+                                $('.loading').hide();
                             }
-
                         });
                     }
                 });
 
+                function startTimer() {
+                    $('#resend-otp').hide();
+                    $('#timer').show();
+                    var countdown = 30;
+                    $('#timer').text(countdown + " seconds remaining");
+                    var interval = setInterval(function() {
+                        countdown--;
+                        $('#timer').text(countdown + " seconds remaining");
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            $('#timer').hide();
+                            $('#resend-otp').show();
+                        }
+                    }, 1000);
+                }
+
+                function resendOtp() {
+                    // Implement resend OTP logic here
+                    console.log('Resend OTP clicked');
+                    // Make an AJAX call to resend OTP
+                }
             });
 
             function hideSuccessErrorDiv(remove_class, add_class, message) {
@@ -174,6 +192,8 @@
                 });
             }
         </script>
+
+
 
 </body>
 

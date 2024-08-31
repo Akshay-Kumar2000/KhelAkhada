@@ -59,109 +59,117 @@ class LoginController extends Controller
         $this->validate($request, [
             'mobile' => 'required|numeric',
         ]);
-        try
-        {
-
-            $mobile                 =   $request->mobile;
-            $otp                    =   $request->otp;
-            $newOtp                 =   rand(100000,999999);
-            $userData               =   User::where('mobile',$mobile)->first();
-
-            if(isset($userData)){
-                if($userData->status==0){
-                      return response([
-                            'status'         => 0,
-                            'message'        => "This User is Blocked"
-                        ],400);
+    
+        $isResend = $request->has('resend_otp') && $request->resend_otp == true;
+    
+        try {
+            $mobile = $request->mobile;
+            $otp = $request->otp;
+            $newOtp = rand(100000,999999);
+            $userData = User::where('mobile', $mobile)->first();
+    
+            if (isset($userData)) {
+                if ($userData->status == 0) {
+                    return response([
+                        'status' => 0,
+                        'message' => "This User is Blocked"
+                    ], 400);
                 }
-                if($userData && $otp){
-                    if($userData->otp != $otp){
-                        return response([
-                            'status'         => 0,
-                            'message'        => "Invalid OTP!"
-                        ],400);
+    
+                if ($otp) {
+                    if ($userData->otp != $otp) {
+                        return response()->json([
+                            'status' => 0,
+                            'message' => 'Invalid OTP!'
+                        ], 400);
                     }
                     Auth::login($userData);
-                    $userData->otp  =   0;
+                    $userData->otp = 0;
                     $userData->save();
-
-                  $user_id = $userData->id;
-                  $user_data = new UserData;
-                  $user_data->user_id = $user_id;
-                //   $user_data->vplay_id = 0;
-                //   $user_data->save();
-
-                  $user_data->vplay_id = 0;
-                  if($user_data->save()){
-                    $user_setting = new UserSetting;
-                    \Log::info('KYC Status for User ID ' . json_encode($user_data));
-                    $user_setting->user_id = $user_id;
-                    $user_setting->status = 1;
-                    $user_setting->referral  =  bin2hex(random_bytes(4));
-                    if($user_setting->save()){
-                        \Log::info('user setting log ' . json_encode($user_setting));
-                        return response([
-                            'status'         => 2,
-                            'url'            => url('/')
-                        ],200);
+    
+                    // Check if user_settings record exists and update if necessary
+                    $user_setting = UserSetting::where('user_id', $userData->id)->first();
+                    if (!$user_setting) {
+                        $user_setting = new UserSetting;
+                        $user_setting->user_id = $userData->id;
+                        $user_setting->status = 1;
+                        $user_setting->referral = bin2hex(random_bytes(4));
+                        $user_setting->save();
+                    } else {
+                        // Update existing record if necessary
+                        $user_setting->status = 1;
+                        $user_setting->save();
                     }
-                  }
-
-                    return response([
-                        'status'         => 0,
-                        "message" => "user not correctly passed"
-                        // 'url'            => url('/')
-                    ],400);
+                    
+                    return response()->json([
+                        'status' => 2,
+                        'url' => url('/')
+                    ], 200);
                 }
-                $userData->otp  =   111111;
-                $userData->save();
-                $this->sendOtp($mobile,$newOtp);
-
-                return response([
-                    'status'         => 1,
-                    'message'        => "OTP send successfully!"
-                ],200);
-            }else{
-                $user	                = User::create([
-                    'username'          => ucfirst(substr(str_shuffle("abcdefghijklmnopqrstuvwxyz"), 0, 4)).ucfirst(substr(str_shuffle("abcdefghijklmnopqrstuvwxyz"), 0, 4)),
-                    'mobile'            => $mobile,
-                    // 'wallet'            => 30,
-                    'otp'               => $newOtp,
-                    'ip'	            =>	$request->ip()
+    
+                if (!$isResend) {
+                    $userData->otp = $newOtp;
+                    $userData->save();
+                    $this->sendOtp($mobile, $newOtp);
+                    
+                    return response()->json([
+                        'status' => 1,
+                        'message' => 'OTP sent successfully!'
+                    ], 200);
+                }
+    
+                $this->sendOtp($mobile, $newOtp);
+    
+                return response()->json([
+                    'status' => 1,
+                    'message' => 'OTP resent successfully!'
+                ], 200);
+            } else {
+                $user = User::create([
+                    'username' => ucfirst(substr(str_shuffle("abcdefghijklmnopqrstuvwxyz"), 0, 4)).ucfirst(substr(str_shuffle("abcdefghijklmnopqrstuvwxyz"), 0, 4)),
+                    'mobile' => $mobile,
+                    'otp' => $newOtp,
+                    'ip' => $request->ip()
                 ]);
                 $user_id = $user->id;
-                if($request->referral){
-                    $settings   =   UserSetting::where('user_id',$user_id)->first();
-                    $rf_user_data    =   UserSetting::where('referral',$request->referral)->first();
-                    if(empty($settings)){
-                      $settings = new UserSetting;
-                      $settings->user_id   =  $user_id;
-                      $settings->referral  =  bin2hex(random_bytes(4));
+                if ($request->referral) {
+                    $settings = UserSetting::where('user_id', $user_id)->first();
+                    $rf_user_data = UserSetting::where('referral', $request->referral)->first();
+                    if (empty($settings)) {
+                        $settings = new UserSetting;
+                        $settings->user_id = $user_id;
+                        $settings->status = 1;
+                        $settings->referral = bin2hex(random_bytes(4));
+                        $settings->save();
                     }
-                  	$settings->used_referral = $request->referral;
-                    $settings->rf_user_id = $rf_user_data->user_id;
-                  	$settings->save();
+                    $rf_user = User::where('id', $rf_user_data->user_id)->first();
+                    if (isset($rf_user)) {
+                        if ($rf_user->status == 0) {
+                            return response([
+                                'status' => 0,
+                                'message' => "This User is Blocked"
+                            ], 400);
+                        }
+                        $rf_user->earnings += 50;
+                        $rf_user->save();
+                    }
                 }
-
-                if(isset($user->id)){
-			    	$user_id = $user->id;
-			    	$user_data = new UserData;
-			    	$user_data['user_id'] = $user_id;
-			    	$user_data['vplay_id'] = 0;
-			    	$user_data->save();
-                    $this->sendOtp($mobile,$newOtp);
-                    return response([
-                        'status'         => 1,
-                        'message'        => "OTP send successfully!"
-                    ],200);
-                }
+                $this->sendOtp($mobile, $newOtp);
+    
+                return response()->json([
+                    'status' => 1,
+                    'message' => 'OTP sent successfully!'
+                ], 200);
             }
-        }catch (\Exception $e) {
-            $bug = $e->getMessage();
-            return redirect()->back()->with('error', $bug);
-
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
         }
-	}
+    }
+    
+    
 
 //     private function sendOtp($mobile,$otp){
 
