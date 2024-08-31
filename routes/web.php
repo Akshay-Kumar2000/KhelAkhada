@@ -146,6 +146,7 @@ Route::post('/roomcode_add', [ChallengeController::class, 'add_rommcode']);
 Route::get('/roomcode_automatic_generate/{id}', [ChallengeController::class, 'add_rommcode_automatic']);
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class,'doLoginUser'])->name('login');
+
 Route::any('/payment-gateway-webhook', 'User\PaymentController@paymentGatewayResWebhook');
 
 Route::group(['middleware' => 'auth:web'], function () {
