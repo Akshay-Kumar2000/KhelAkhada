@@ -374,9 +374,9 @@ class PaymentController
 
     // using this for the upipayment status check callback
     public function upiStatusCheck() {
-        \Log::info("upiStatusCheck function triggered");
+        // \Log::info("upiStatusCheck function triggered");
         $orders = PaymentOrder::where('status', 0)->get();
-        \Log::info("Number of orders found with status 0: " . count($orders));
+        // \Log::info("Number of orders found with status 0: " . count($orders));
         foreach ($orders as $key => $value) {
             $payOrder = PaymentOrder::find($value->id);
             if (!empty($payOrder)) {
