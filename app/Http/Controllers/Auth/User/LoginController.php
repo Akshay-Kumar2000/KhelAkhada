@@ -167,9 +167,7 @@ class LoginController extends Controller
                 'message' => 'An error occurred: ' . $e->getMessage()
             ], 500);
         }
-    }
-    
-    
+    }    
 
 //     private function sendOtp($mobile,$otp){
 

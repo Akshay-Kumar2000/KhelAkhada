@@ -59,7 +59,7 @@
                   <div class="gameCard-container">
                     <div class="text-danger"><span class="blink text-danger d-block text-right">◉ Ludo Classic Only (LIVE)</span></div>
                      <a class="gameCard" href="{{url('challenges')}}">
-                        <div class="gameCard-image"><img width="100%" src="{{asset('front/images/ludo-2.jpg')}}" alt=""></div>
+                        <div class="gameCard-image"><img width="100%" src="{{asset('front/images/Ludo Classic 50.png')}}" alt=""></div>
                         <div class="gameCard-title">Ludo Classic</div>
                         <div class="gameCard-icon"><img src="{{asset('front/images/award-blue.png')}}" alt=""></div>
                      </a>
@@ -68,7 +68,7 @@
                      <span class="blink text-danger d-block text-right">◉ Ludo Classic Only (LIVE)</span>
                      <a class="gameCard" href="{{url('challenges')}}">
                         <div class="gameCard-image">
-                          <img width="100%" src="{{asset('front/images/ludo-1.jpg')}}" alt=""></div>
+                          <img width="100%" src="{{asset('front/images/Ludo Classic 550.png')}}" alt=""></div>
                         <div class="gameCard-title">Ludo Classic</div>
                         <div class="gameCard-icon"><img src="{{asset('front/images/award-blue.png')}}" alt=""></div>
                      </a>
@@ -99,7 +99,7 @@
                <div class="row footer-links">
                   <div class="col-12 pb-3">
                      <div class="footer-logo">
-                         <img width="80px" src="/copyright.png" style="width:100%"> <br>
+                         {{-- <img width="80px" src="/copyright.png" style="width:100%"> <br> --}}
                          <img width="80px" src="/front/images/KhelAkhada.jpeg" alt="">
                     </div>
                   </div>
