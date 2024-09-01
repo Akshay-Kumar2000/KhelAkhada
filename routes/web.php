@@ -90,6 +90,37 @@ Route::get('/', function (Request $request) {
 })->name('front.apnaludo');
 
 
+// Route::get('/', function (Request $request) {
+//     // Handle payment status check if present
+//     if (isset($request->pgstatus)) {
+//         if ($request->pgstatus == "success") {
+//             $payment = new PaymentController();
+//             return $payment->upiStatusCheck(); // Return the response from upiStatusCheck
+//         } elseif ($request->pgstatus == "fail") {
+//             // Handle payment failure logic
+//             return view('front.payment-fail'); // Render a payment fail view
+//         }
+//     }
+
+//     // Other logic
+//     $status = Setting::where('id', 3)->first();
+//     $kyc = 0;
+
+//     if (Auth::check()) { // Ensure the user is authenticated
+//         $user_id = Auth::user()->id;
+//         $user_kyc = UserData::where('user_id', $user_id)->first();
+//         if ($user_kyc) {
+//             $kyc = $user_kyc->verify_status;
+//         }
+//     }
+
+//     if ($status && $status->field_value == "no") {
+//         // Logic if status field_value is "no"
+//     }
+
+//     return view('front.welcome', compact('kyc'));
+// })->name('front.apnaludo');
+
 Route::get('/int', function () {
     return Hash::make('Ghjyf@#$%^&*85274');
 });

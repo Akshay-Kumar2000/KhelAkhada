@@ -270,8 +270,10 @@ class PaymentController
                 "custmobile" => "8091774412",
                 // "redirecturl" => "https://game.bottomfunnel.net/",
                 // "mcallback_url" => "https://game.bottomfunnel.net/new-upi-gateway-response"
-                "redirecturl" => "https://khelakhada.com/",
-                "mcallback_url" => "https://khelakhada.com/new-upi-gateway-response"
+                "redirecturl" => "http://192.168.148.76:8080/",
+                "mcallback_url" => "http://192.168.148.76:8080/new-upi-gateway-response"
+                // "redirecturl" => "https://khelakhada.com/",
+                // "mcallback_url" => "https://khelakhada.com/new-upi-gateway-response"
             ];
 
             $curl = curl_init();
@@ -374,62 +376,77 @@ class PaymentController
 
     // using this for the upipayment status check callback
     public function upiStatusCheck() {
-        // \Log::info("upiStatusCheck function triggered");
+        \Log::info("upiStatusCheck function triggered");
+        
         $orders = PaymentOrder::where('status', 0)->get();
-        // \Log::info("Number of orders found with status 0: " . count($orders));
+        \Log::info("Number of orders found with status 0: " . count($orders));
+        
         foreach ($orders as $key => $value) {
             $payOrder = PaymentOrder::find($value->id);
+            
             if (!empty($payOrder)) {
                 \Log::info("Processing order ID: " . $payOrder->id);
-
-                $client = new Client();
-                // $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php?loginid=6375030393&apikey=hdcupxeg2m&request_id=' . $payOrder->order_id);
-                $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php?loginid=9257024792&apikey=7pacgmqbzx&request_id=' . $payOrder->order_id);
-
-                if ($res->getStatusCode() == 200) {
-                    $response_data = $res->getBody()->getContents();
-                    $response = json_decode($response_data, true);
-                    \Log::info("API Response: " . $response_data);
-
-                    // Set the $user_id variable early
-                    $user_id = $payOrder->user_id;
-                    \Log::info("User ID: " . $user_id);
-
-                    if ($response['status'] == 'success') {
-                        $user_data = User::where('id', $user_id)->first();
-                        \Log::info("User Wallet Before: " . $user_data->wallet);
-
-                        $wallet = $user_data->wallet;
-                        $txn = Transaction::create([
-                            'user_id' => $user_id,
-                            'source_id' => $payOrder->order_id,
-                            'amount' => $payOrder->amount,
-                            'a_amount' => 0,
-                            'status' => 'Wallet',
-                            'remark' => 'Upigateway wallet recharge',
-                            'ip' => "127.0.0.1",
-                            'closing_balance' => $wallet + $payOrder->amount,
-                        ]);
-
-                        $payOrder->status = 1;
-                        \Log::info("Transaction Created: " . $txn->id);
-                    } elseif ($response['status'] == 'fail') {
-                        $payOrder->status = 2;
-                        \Log::info("Payment failed for order ID: " . $payOrder->id);
+    
+                try {
+                    $client = new Client();
+                    $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php', [
+                        'query' => [
+                            'loginid' => '9257024792',
+                            'apikey' => '7pacgmqbzx',
+                            'request_id' => $payOrder->order_id
+                        ]
+                    ]);
+    
+                    if ($res->getStatusCode() == 200) {
+                        $response_data = $res->getBody()->getContents();
+                        $response = json_decode($response_data, true);
+                        \Log::info("API Response: " . $response_data);
+    
+                        $user_id = $payOrder->user_id;
+                        \Log::info("User ID: " . $user_id);
+    
+                        if ($response['status'] == 'success') {
+                            $user_data = User::find($user_id);
+                            \Log::info("User Wallet Before: " . $user_data->wallet);
+    
+                            $wallet = $user_data->wallet;
+                            
+                            $txn = Transaction::create([
+                                'user_id' => $user_id,
+                                'source_id' => $payOrder->order_id,
+                                'amount' => $payOrder->amount,
+                                'a_amount' => 0,
+                                'status' => 'Wallet',
+                                'remark' => 'Upigateway wallet recharge',
+                                'ip' => request()->ip(),
+                                'closing_balance' => $wallet + $payOrder->amount,
+                            ]);
+    
+                            \Log::info("Transaction Created: " . $txn->id);
+    
+                            $payOrder->status = 1;
+                            $payOrder->save();
+    
+                            // Update the user's wallet after the transaction is saved
+                            User::where('id', $user_id)->increment('wallet', $payOrder->amount);
+                            \Log::info("User Wallet After: " . ($wallet + $payOrder->amount));
+    
+                        } elseif ($response['status'] == 'fail') {
+                            $payOrder->status = 2;
+                            $payOrder->save();
+                            \Log::info("Payment failed for order ID: " . $payOrder->id);
+                        }
+                    } else {
+                        \Log::error("Failed to get a successful response from the payment gateway for order ID: " . $payOrder->id);
                     }
-
-                    $payOrder->save();
-                    \Log::info("Order status updated: " . $payOrder->status);
-
-                    // Only update wallet balance if the payment was successful
-                    if ($payOrder->status == 1) {
-                        User::where('id', $user_id)->increment('wallet', $payOrder->amount);
-                        \Log::info("User Wallet After: " . ($wallet + $payOrder->amount));
-                    }
+    
+                } catch (\Exception $e) {
+                    \Log::error("Error processing order ID: " . $payOrder->id . ". Exception: " . $e->getMessage());
                 }
             }
         }
     }
+    
 
     public function upitel_recharge_status(Request $request)
     {

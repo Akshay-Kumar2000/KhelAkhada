@@ -95,7 +95,7 @@
     </div>
     <div class="divider-y"></div>
 
-    <script>
+    {{-- <script>
         function getAmount(amount) {
             $('#add-amount').val(amount);
         }
@@ -109,5 +109,65 @@
                 icon: "error"
             });
         </script>
-    @endif
+    @endif --}}
+
+    <script>
+        function getAmount(amount) {
+            $('#add-amount').val(amount);
+        }
+
+        // Polling function to check payment status
+        function checkPaymentStatus(orderId) {
+            fetch(`/check-payment-status?order_id=${orderId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.href = '/payment-success'; // Redirect on success
+                    } else if (data.status === 'fail') {
+                        window.location.href = '/payment-fail'; // Redirect on failure
+                    }
+                })
+                .catch(() => {
+                    console.log('Error checking payment status.');
+                });
+        }
+
+        // Get orderId from form data or URL parameter
+        function getOrderId() {
+            // Example method to get order ID. Adjust based on your actual logic
+            return '{{ session('order_id') }}';
+        }
+
+        // Start polling after form submission
+        document.getElementById('make-payment').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Extract orderId from form or session
+            const orderId = getOrderId();
+
+            // Show popup
+            $('#popup').css('display', 'flex');
+
+            // Poll every 5 seconds
+            const intervalId = setInterval(() => {
+                checkPaymentStatus(orderId);
+                // Clear interval when redirecting
+                if (window.location.pathname === '/payment-success' || window.location.pathname ===
+                    '/payment-fail') {
+                    clearInterval(intervalId);
+                }
+            }, 5000);
+
+            // Submit form after starting polling
+            this.submit();
+        });
+
+        @if (session()->has('error'))
+            Swal.fire({
+                title: "Oops!",
+                text: "{{ session()->get('error') }}",
+                icon: "error"
+            });
+        @endif
+    </script>
 @endsection
