@@ -228,7 +228,7 @@ class PaymentController
                     "amount": "' . $request->orderAmount . '",
                     "mobile": "' . $user->mobile . '",
                     "orderid": "' . $order_id . '",
-                    "callback_url": "https://khelakhada.com"
+                    "callback_url": "https://akadda.com"
                 }',
                 CURLOPT_HTTPHEADER => array(
                     'Content-Type: application/json',
@@ -269,8 +269,9 @@ class PaymentController
                 "trxnote" => $user->username,
                 "custmobile" => "8091774412",
                 // "redirecturl" => "https://game.bottomfunnel.net/",
-                "redirecturl" => "http://127.0.0.1:8000/",
-                "mcallback_url" => "https://khelakhada/new-upi-gateway-response"
+                // "mcallback_url" => "https://game.bottomfunnel.net/new-upi-gateway-response"
+                "redirecturl" => "https://khelakhada.com/",
+                "mcallback_url" => "https://khelakhada.com/new-upi-gateway-response"
             ];
 
             $curl = curl_init();
@@ -373,7 +374,9 @@ class PaymentController
 
     // using this for the upipayment status check callback
     public function upiStatusCheck() {
+        \Log::info("upiStatusCheck function triggered");
         $orders = PaymentOrder::where('status', 0)->get();
+        \Log::info("Number of orders found with status 0: " . count($orders));
         foreach ($orders as $key => $value) {
             $payOrder = PaymentOrder::find($value->id);
             if (!empty($payOrder)) {
