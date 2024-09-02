@@ -335,36 +335,28 @@ class PaymentController
             // Prepare the Paytm parameters array
             $paytmParams = [
                 "MID" => $merchant_id,
-                "ORDER_ID" => $order_id,
-                "CUST_ID" => $user_id,
+                "ORDERID" => $order_id,
+                "CUSTID" => $user_id,
                 "INDUSTRY_TYPE_ID" => $industry_type_id,
-                "CHANNEL_ID" => $channel_id,
+                "CHANNELID" => $channel_id,
                 "TXN_AMOUNT" => $request->orderAmount,
                 "WEBSITE" => $website,
-                "CALLBACK_URL" => url('/paytm-callback'), // Update with your callback URL
+                "CALLBACK_URL" => url('/paytm-callback'), // Correct callback URL
                 "MOBILE_NO" => $user->mobile,
                 "EMAIL" => $user->email
             ];
 
-            // Convert the parameters array to JSON string for checksum generation
-            $body = json_encode($paytmParams);
-
-            // Generate checksum using PaytmChecksum class
+           // Generate checksum using PaytmChecksum class
             try {
-                $checksum = PaytmChecksum::generateSignature($body, $merchant_key);
+                $checksum = PaytmChecksum::generateSignature($paytmParams, $merchant_key);
             } catch (Exception $e) {
-                // Handle the exception
-                return response()->json(['error' => 'Checksum generation failed. Please try again.']);
+                return response()->json(['error' => 'Checksum generation failed.']);
             }
 
             // Add the checksum to the Paytm parameters
             $paytmParams["CHECKSUMHASH"] = $checksum;
 
-            // Paytm Payment Gateway URL
-            $paytmUrl = "https://securegw-stage.paytm.in/theia/processTransaction"; // For testing
-            // $paytmUrl = "https://securegw.paytm.in/theia/processTransaction"; // For production
-
-            // Create and submit the form automatically
+            $paytmUrl = "https://securegw-stage.paytm.in/theia/processTransaction"; // Testing URL
             echo '<form method="post" action="' . $paytmUrl . '" name="paytm_form">';
             foreach ($paytmParams as $name => $value) {
                 echo '<input type="hidden" name="' . $name . '" value="' . $value . '">';
@@ -444,43 +436,102 @@ class PaymentController
 
 
     // this is for the paytm callback
-    public function paytmCallback(Request $request)
-{
-    // Log the incoming request data
-    \Log::info('Paytm Callback Data:', $request->all());
+//     public function paytmCallback(Request $request)
+// {
+//     // Log the incoming request data
+//     \Log::info('Paytm Callback Data:', $request->all());
 
-    try {
-        $paytmParams = $request->all(); // Get all the request parameters
+//     try {
+//         $paytmParams = $request->all(); // Get all the request parameters
 
-        // Log all parameters received
-        \Log::info('Received Parameters:', $paytmParams);
+//         // Log all parameters received
+//         \Log::info('Received Parameters:', $paytmParams);
 
-        // Check if CHECKSUMHASH exists in the request
-        if (!isset($paytmParams['CHECKSUMHASH'])) {
-            \Log::warning('Checksum hash is missing.');
-            throw new \Exception('Checksum hash is missing.');
-        }
+//         // Check if CHECKSUMHASH exists in the request
+//         if (!isset($paytmParams['CHECKSUMHASH'])) {
+//             \Log::warning('Checksum hash is missing.');
+//             throw new Exception('Checksum hash is missing.');
+//         }
 
-        $paytmChecksum = $paytmParams['CHECKSUMHASH']; // Get the checksum hash
-        unset($paytmParams['CHECKSUMHASH']); // Remove checksum from parameters
+//         $paytmChecksum = $paytmParams['CHECKSUMHASH']; // Get the checksum hash
+//         unset($paytmParams['CHECKSUMHASH']); // Remove checksum from parameters
 
-        // Verify the checksum
-        $isValidChecksum = PaytmChecksum::verifySignature($paytmParams, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+//         // Verify the checksum
+//         $isValidChecksum = PaytmChecksum::verifySignature($paytmParams, 'YOUR_MERCHANT_KEY', $paytmChecksum);
 
-        if ($isValidChecksum) {
-            // Handle the payment response
-            \Log::info('Checksum Verified Successfully');
-            return response()->json(['message' => 'Payment successful.']);
-        } else {
-            \Log::warning('Checksum Verification Failed');
-            return response()->json(['error' => 'Invalid checksum.'], 400);
-        }
-    } catch (\Exception $e) {
-        // Log the exception and return error response
-        \Log::error('Error in Paytm Callback: ' . $e->getMessage());
-        return response()->json(['error' => 'An error occurred. Please try again.'], 500);
+//         if ($isValidChecksum) {
+//             \Log::info('Checksum Verified Successfully');
+//             return response()->json(['message' => 'Payment successful.']);
+//         } else {
+//             \Log::warning('Checksum Verification Failed');
+//             return response()->json(['error' => 'Invalid checksum.'], 400);
+//         }
+//     } catch (Exception $e) {
+//         // Log the exception and return error response
+//         \Log::error('Error in Paytm Callback: ' . $e->getMessage());
+//         return response()->json(['error' => 'An error occurred. Please try again.'], 500);
+//     }
+// }2
+
+    private function generateChecksum($order_id)
+    {
+        $params = [
+            'MID' => 'NQJjLl52749086393163',
+            'ORDERID' => $order_id,
+            // other required parameters...
+        ];
+
+        return PaytmChecksum::generateSignature($params, 'your_merchant_key');
     }
-}
+
+    private function verifyPayment($order_id)
+    {
+        // Use the Guzzle client or cURL to send a request to Paytm's API
+        // Example with Guzzle:
+
+        $client = new \GuzzleHttp\Client();
+        $response = $client->post('https://securegw.paytm.in/order/status', [
+            'form_params' => [
+                'MID' => 'NQJjLl52749086393163',
+                'ORDERID' => $order_id,
+                'CHECKSUMHASH' => $this->generateChecksum($order_id),
+            ]
+        ]);
+
+        $responseBody = json_decode($response->getBody(), true);
+
+        if ($responseBody['STATUS'] === 'TXN_SUCCESS') {
+            return 'success';
+        } else {
+            return 'failure';
+        }
+    }
+
+    public function paytmCallback(Request $request)
+    {
+        \Log::info('Paytm Callback Data: ', $request->all());
+        try {
+            $order_id = $request->input('ORDERID');
+
+            // Add your logic here to verify the payment status
+            $status = $this->verifyPayment($order_id);
+
+            if ($status === 'success') {
+                // Payment was successful
+                // Update wallet, order status, etc.
+                return redirect()->route('payment.success')->with('message', 'Payment Successful!');
+            } else {
+                // Payment failed
+                return redirect()->route('payment.failed')->with('error', 'Payment Failed.');
+            }
+        } catch (Exception $e) {
+            // Log the error for debugging
+            \Log::error('Paytm Callback Error: ' . $e->getMessage());
+
+            return response()->json(['error' => 'An error occurred. Please try again.']);
+        }
+    }
+
 
 
     // using this for the upipayment status check callback
