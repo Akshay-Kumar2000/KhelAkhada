@@ -225,6 +225,9 @@ Route::group(['middleware' => 'auth:web'], function () {
 
     Route::post('/new-upi-gateway-response', [PaymentController::class, 'upitel_recharge_status'])->name('new-upi-gateway-response');
 
+    // this is for the paytm callback
+    Route::post('/paytm-callback', 'PaymentController@paytmCallback');
+
     //Cashfree gateway
     Route::post('/payment-gateway-cashfree-res', 'User\PaymentController@paymentGatewayRes')->name('payment-gateway-cashfree-res');
     Route::post('/webhook-response', 'User\WebhookController@paymentGatewayRes')->name('webhook-response');

@@ -4,8 +4,16 @@ namespace App\Http\Controllers\User;
 
 use App\User;
 
-use App\Http\Controllers\Controller;
+// use Paytm\PaytmChecksum;
+// require_once base_path('vendor/paytm/paytm-pg/src/PaytmChecksum.php');
+
+// require_once('vendor/autoload.php');
+// use paytm\checksum\PaytmChecksumLibrary;
+
+use Exception;
 use Illuminate\Http\Request;
+use paytm\paytmchecksum\PaytmChecksum; // Import the PaytmChecksum class
+use App\Http\Controllers\Controller;
 use Auth;
 
 use LoveyCom\CashFree\PaymentGateway\Order;
@@ -308,85 +316,181 @@ class PaymentController
                     return $data;
                 }
             }
-        } elseif ($ChoicedGateway == "phonepeupi") {
+        }
+        elseif ($ChoicedGateway == "phonepeupi") {
             $gateway = 'UPI-Gateway';
             $user_id = $user->id;
             $order_id = $gateway . '-' . time() . '-' . $user_id;
-            $key = '8e4fb829-a510-4353-92ef-4f671e02edad';
 
-            // Create a new payment order
+            // Paytm Credentials
+            $merchant_id = 'NQJjLl52749086393163'; // Replace with your Paytm Merchant ID
+            $merchant_key = '84S@bE9uZ0dOaqCF'; // Replace with your Paytm Merchant Key
+            $website = 'WEBSTAGING'; // For testing, use 'WEBSTAGING'; for production, use 'DEFAULT'
+            $channel_id = 'WEB'; // For web payments
+            $industry_type_id = 'Retail'; // Set your industry type
+
+            // Create a new payment order in your database
             $order = PaymentOrder::create([
                 'user_id' => $user_id,
                 'order_id' => $order_id,
                 'amount' => $request->orderAmount,
                 'gateway' => $gateway,
-                'ip' => $request->ip()
+                'ip' => $request->ip(),
             ]);
 
-            // Prepare the cURL request to the payment gateway
-            $content = json_encode(
-                array(
-                    "key" => $key,
-                    "client_txn_id" => $order_id,
-                    "amount" => $request->orderAmount,
-                    "p_info" => "Product Name",
-                    "customer_name" => $user->username,
-                    "customer_email" => "alshuindia@gmail.com",
-                    "customer_mobile" => $user->mobile,
-                    "redirect_url" => url('/'),
-                    "udf1" => "user defined field 1",
-                    "udf2" => "user defined field 2",
-                    "udf3" => "user defined field 3",
-                )
-            );
+            // Prepare the Paytm parameters array
+            $paytmParams = [
+                "MID" => $merchant_id,
+                "ORDER_ID" => $order_id,
+                "CUST_ID" => $user_id,
+                "INDUSTRY_TYPE_ID" => $industry_type_id,
+                "CHANNEL_ID" => $channel_id,
+                "TXN_AMOUNT" => $request->orderAmount,
+                "WEBSITE" => $website,
+                "CALLBACK_URL" => url('/paytm-callback'), // Update with your callback URL
+                "MOBILE_NO" => $user->mobile,
+                "EMAIL" => $user->email
+            ];
 
-            $url = "https://merchant.upigateway.com/api/create_order";
-            $curl = curl_init($url);
-            curl_setopt($curl, CURLOPT_HEADER, false);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt(
-                $curl,
-                CURLOPT_HTTPHEADER,
-                array("Content-type: application/json")
-            );
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
-            $json_response = curl_exec($curl);
-            $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            // Convert the parameters array to JSON string for checksum generation
+            $body = json_encode($paytmParams);
 
-            if ($status != 200) {
-                die("Error: call to URL $url failed with status $status, response $json_response, curl_error " . curl_error($curl) . ", curl_errno " . curl_errno($curl));
+            // Generate checksum using PaytmChecksum class
+            try {
+                $checksum = PaytmChecksum::generateSignature($body, $merchant_key);
+            } catch (Exception $e) {
+                // Handle the exception
+                return response()->json(['error' => 'Checksum generation failed. Please try again.']);
             }
-            curl_close($curl);
 
-            $response = json_decode($json_response, true);
+            // Add the checksum to the Paytm parameters
+            $paytmParams["CHECKSUMHASH"] = $checksum;
 
-            if ($response["status"] == true) {
-                echo "<script>window.location.href='" . $response["data"]["payment_url"] . "'</script>";
-                die();
-            } else {
-                echo $response['msg'];
-                die('error');
+            // Paytm Payment Gateway URL
+            $paytmUrl = "https://securegw-stage.paytm.in/theia/processTransaction"; // For testing
+            // $paytmUrl = "https://securegw.paytm.in/theia/processTransaction"; // For production
+
+            // Create and submit the form automatically
+            echo '<form method="post" action="' . $paytmUrl . '" name="paytm_form">';
+            foreach ($paytmParams as $name => $value) {
+                echo '<input type="hidden" name="' . $name . '" value="' . $value . '">';
             }
-        } else {
+            echo '<input type="submit" value="Pay via Paytm" />';
+            echo '</form>';
+            echo '<script type="text/javascript">document.paytm_form.submit();</script>';
+            die();
+        }
+
+
+        //  elseif ($ChoicedGateway == "phonepeupi") {
+        //     $gateway = 'UPI-Gateway';
+        //     $user_id = $user->id;
+        //     $order_id = $gateway . '-' . time() . '-' . $user_id;
+        //     $key = '8e4fb829-a510-4353-92ef-4f671e02edad';
+
+        //     // Create a new payment order
+        //     $order = PaymentOrder::create([
+        //         'user_id' => $user_id,
+        //         'order_id' => $order_id,
+        //         'amount' => $request->orderAmount,
+        //         'gateway' => $gateway,
+        //         'ip' => $request->ip()
+        //     ]);
+
+        //     // Prepare the cURL request to the payment gateway
+        //     $content = json_encode(
+        //         array(
+        //             "key" => $key,
+        //             "client_txn_id" => $order_id,
+        //             "amount" => $request->orderAmount,
+        //             "p_info" => "Product Name",
+        //             "customer_name" => $user->username,
+        //             "customer_email" => "alshuindia@gmail.com",
+        //             "customer_mobile" => $user->mobile,
+        //             "redirect_url" => url('/'),
+        //             "udf1" => "user defined field 1",
+        //             "udf2" => "user defined field 2",
+        //             "udf3" => "user defined field 3",
+        //         )
+        //     );
+
+        //     $url = "https://merchant.upigateway.com/api/create_order";
+        //     $curl = curl_init($url);
+        //     curl_setopt($curl, CURLOPT_HEADER, false);
+        //     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        //     curl_setopt(
+        //         $curl,
+        //         CURLOPT_HTTPHEADER,
+        //         array("Content-type: application/json")
+        //     );
+        //     curl_setopt($curl, CURLOPT_POST, true);
+        //     curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
+        //     $json_response = curl_exec($curl);
+        //     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        //     if ($status != 200) {
+        //         die("Error: call to URL $url failed with status $status, response $json_response, curl_error " . curl_error($curl) . ", curl_errno " . curl_errno($curl));
+        //     }
+        //     curl_close($curl);
+
+        //     $response = json_decode($json_response, true);
+
+        //     if ($response["status"] == true) {
+        //         echo "<script>window.location.href='" . $response["data"]["payment_url"] . "'</script>";
+        //         die();
+        //     } else {
+        //         echo $response['msg'];
+        //         die('error');
+        //     }
+        // }
+        else {
             return "Something went wrong!!";
         }
     }
 
 
+    // this is for the paytm callback
+    public function paytmCallback(Request $request)
+{
+    $paytmParams = $request->all();
+     // Log the request or inspect the data
+     Log::info('Paytm Callback Request:', $request->all());
+
+    $paytmChecksum = $paytmParams['CHECKSUMHASH'];
+    unset($paytmParams['CHECKSUMHASH']);
+
+    // Generate the body for verification
+    $body = json_encode($paytmParams);
+
+    // Verify checksum using PaytmChecksum class
+    $isVerifySignature = PaytmChecksum::verifySignature($body, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+
+    if ($isVerifySignature) {
+        // Checksum matched
+        // Process the payment response and update the order status in your database
+        // Example: if payment successful, update order status to 'Paid'
+        return response()->json(['message' => 'Payment successful, checksum matched.']);
+    } else {
+        // Checksum mismatched
+        return response()->json(['error' => 'Checksum mismatched.']);
+    }
+}
+
+
+
     // using this for the upipayment status check callback
     public function upiStatusCheck() {
         \Log::info("upiStatusCheck function triggered");
-        
+
         $orders = PaymentOrder::where('status', 0)->get();
         \Log::info("Number of orders found with status 0: " . count($orders));
-        
+
         foreach ($orders as $key => $value) {
             $payOrder = PaymentOrder::find($value->id);
-            
+
             if (!empty($payOrder)) {
                 \Log::info("Processing order ID: " . $payOrder->id);
-    
+
                 try {
                     $client = new Client();
                     $res = $client->request('GET', 'https://upipg.gtelararia.com/order/statuscheck.php', [
@@ -396,21 +500,21 @@ class PaymentController
                             'request_id' => $payOrder->order_id
                         ]
                     ]);
-    
+
                     if ($res->getStatusCode() == 200) {
                         $response_data = $res->getBody()->getContents();
                         $response = json_decode($response_data, true);
                         \Log::info("API Response: " . $response_data);
-    
+
                         $user_id = $payOrder->user_id;
                         \Log::info("User ID: " . $user_id);
-    
+
                         if ($response['status'] == 'success') {
                             $user_data = User::find($user_id);
                             \Log::info("User Wallet Before: " . $user_data->wallet);
-    
+
                             $wallet = $user_data->wallet;
-                            
+
                             $txn = Transaction::create([
                                 'user_id' => $user_id,
                                 'source_id' => $payOrder->order_id,
@@ -421,16 +525,16 @@ class PaymentController
                                 'ip' => request()->ip(),
                                 'closing_balance' => $wallet + $payOrder->amount,
                             ]);
-    
+
                             \Log::info("Transaction Created: " . $txn->id);
-    
+
                             $payOrder->status = 1;
                             $payOrder->save();
-    
+
                             // Update the user's wallet after the transaction is saved
                             User::where('id', $user_id)->increment('wallet', $payOrder->amount);
                             \Log::info("User Wallet After: " . ($wallet + $payOrder->amount));
-    
+
                         } elseif ($response['status'] == 'fail') {
                             $payOrder->status = 2;
                             $payOrder->save();
@@ -439,14 +543,14 @@ class PaymentController
                     } else {
                         \Log::error("Failed to get a successful response from the payment gateway for order ID: " . $payOrder->id);
                     }
-    
+
                 } catch (\Exception $e) {
                     \Log::error("Error processing order ID: " . $payOrder->id . ". Exception: " . $e->getMessage());
                 }
             }
         }
     }
-    
+
 
     public function upitel_recharge_status(Request $request)
     {

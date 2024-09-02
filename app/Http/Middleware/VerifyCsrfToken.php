@@ -15,5 +15,6 @@ class VerifyCsrfToken extends Middleware
         'payment-gateway-cashfree-res',
         'upi-gateway-res-post',
         '/upitel-recharge-status',
+        '/paytm-callback',
     ];
 }
