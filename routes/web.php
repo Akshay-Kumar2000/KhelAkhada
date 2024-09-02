@@ -217,7 +217,7 @@ Route::group(['middleware' => 'auth:web'], function () {
     Route::post('/add-money-chk', [PaymentController::class, 'createOrderChk'])->name('add-money-chk');
     Route::get('/add-money', [PaymentController::class, 'addMoney'])->name('add-money');
     Route::post('/add-money', [PaymentController::class, 'createOrder'])->name('add-money');
-    Route::post('/add-money-phonepe', [PaymentController::class, 'createOrdernew'])->name('add-money-new');
+    // Route::post('/add-money-phonepe', [PaymentController::class, 'createOrdernew'])->name('add-money-new');
     Route::get('/payment-gateway-paykun-ok', [PaymentController::class, 'paymentGatewayPaykunPostSuccess'])->name('payment-gateway-paykun-ok');
     Route::get('/payment-gateway-paykun-fail', [PaymentController::class, 'paymentGatewayPaykunPostFail'])->name('payment-gateway-paykun-fail');
     Route::get('/upi-gateway-res', [PaymentController::class, 'upiGatewayRes'])->name('upi-gateway-res');
@@ -225,8 +225,11 @@ Route::group(['middleware' => 'auth:web'], function () {
 
     Route::post('/new-upi-gateway-response', [PaymentController::class, 'upitel_recharge_status'])->name('new-upi-gateway-response');
 
-    // this is for the paytm callback
-    Route::post('/paytm-callback', 'PaymentController@paytmCallback');
+    // Route for adding money via PhonePe
+    Route::post('/add-money-phonepe', [PaymentController::class, 'createOrdernew'])->name('add-money-new');
+
+    // Route for Paytm callback
+    Route::post('/paytm-callback', [PaymentController::class, 'paytmCallback']);
 
     //Cashfree gateway
     Route::post('/payment-gateway-cashfree-res', 'User\PaymentController@paymentGatewayRes')->name('payment-gateway-cashfree-res');

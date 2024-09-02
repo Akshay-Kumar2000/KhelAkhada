@@ -4,12 +4,6 @@ namespace App\Http\Controllers\User;
 
 use App\User;
 
-// use Paytm\PaytmChecksum;
-// require_once base_path('vendor/paytm/paytm-pg/src/PaytmChecksum.php');
-
-// require_once('vendor/autoload.php');
-// use paytm\checksum\PaytmChecksumLibrary;
-
 use Exception;
 use Illuminate\Http\Request;
 use paytm\paytmchecksum\PaytmChecksum; // Import the PaytmChecksum class
@@ -452,30 +446,41 @@ class PaymentController
     // this is for the paytm callback
     public function paytmCallback(Request $request)
 {
-    $paytmParams = $request->all();
-     // Log the request or inspect the data
-     Log::info('Paytm Callback Request:', $request->all());
+    // Log the incoming request data
+    \Log::info('Paytm Callback Data:', $request->all());
 
-    $paytmChecksum = $paytmParams['CHECKSUMHASH'];
-    unset($paytmParams['CHECKSUMHASH']);
+    try {
+        $paytmParams = $request->all(); // Get all the request parameters
 
-    // Generate the body for verification
-    $body = json_encode($paytmParams);
+        // Log all parameters received
+        \Log::info('Received Parameters:', $paytmParams);
 
-    // Verify checksum using PaytmChecksum class
-    $isVerifySignature = PaytmChecksum::verifySignature($body, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+        // Check if CHECKSUMHASH exists in the request
+        if (!isset($paytmParams['CHECKSUMHASH'])) {
+            \Log::warning('Checksum hash is missing.');
+            throw new \Exception('Checksum hash is missing.');
+        }
 
-    if ($isVerifySignature) {
-        // Checksum matched
-        // Process the payment response and update the order status in your database
-        // Example: if payment successful, update order status to 'Paid'
-        return response()->json(['message' => 'Payment successful, checksum matched.']);
-    } else {
-        // Checksum mismatched
-        return response()->json(['error' => 'Checksum mismatched.']);
+        $paytmChecksum = $paytmParams['CHECKSUMHASH']; // Get the checksum hash
+        unset($paytmParams['CHECKSUMHASH']); // Remove checksum from parameters
+
+        // Verify the checksum
+        $isValidChecksum = PaytmChecksum::verifySignature($paytmParams, 'YOUR_MERCHANT_KEY', $paytmChecksum);
+
+        if ($isValidChecksum) {
+            // Handle the payment response
+            \Log::info('Checksum Verified Successfully');
+            return response()->json(['message' => 'Payment successful.']);
+        } else {
+            \Log::warning('Checksum Verification Failed');
+            return response()->json(['error' => 'Invalid checksum.'], 400);
+        }
+    } catch (\Exception $e) {
+        // Log the exception and return error response
+        \Log::error('Error in Paytm Callback: ' . $e->getMessage());
+        return response()->json(['error' => 'An error occurred. Please try again.'], 500);
     }
 }
-
 
 
     // using this for the upipayment status check callback
