@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf416669c83b266607082279dfbe5439",
+    "content-hash": "47c70d38069f1b8db805bf29b9cb2f67",
     "packages": [
         {
             "name": "beste/clock",
@@ -4640,6 +4640,20 @@
                 "source": "https://github.com/paytm/Paytm_PHP_Checksum/tree/v1.1.0"
             },
             "time": "2020-11-11T13:42:29+00:00"
+        },
+        {
+            "name": "phonepe/phonepe-pg-php-sdk",
+            "version": "1.0.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://phonepe.mycloudrepo.io/public/repositories/phonepe-pg-php-sdk/phonepe-pg-php-sdk.zip"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "/"
+                ]
+            }
         },
         {
             "name": "phpoption/phpoption",

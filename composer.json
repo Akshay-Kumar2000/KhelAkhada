@@ -18,11 +18,30 @@
         "paykun/checkout": "2.0",
         "paytm/paytm-pg": "^0.0.8",
         "paytm/paytmchecksum": "^1.1",
+        "phonepe/phonepe-pg-php-sdk": "^1.0",
         "spatie/laravel-html": "3.11",
         "spatie/laravel-permission": "^6.9",
         "webklex/laravel-imap": "5.3",
         "yajra/laravel-datatables-oracle": "10.11"
     },
+    "repositories": [
+        {
+            "type": "package",
+            "package": [
+                {
+                    "dist": {
+                        "type": "zip",
+                        "url": "https://phonepe.mycloudrepo.io/public/repositories/phonepe-pg-php-sdk/phonepe-pg-php-sdk.zip"
+                    },
+                    "name": "phonepe/phonepe-pg-php-sdk",
+                    "version": "1.0.0",
+                    "autoload": {
+                        "classmap": ["/"]
+                    }
+                }
+            ]
+        }
+    ],
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",

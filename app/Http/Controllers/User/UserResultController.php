@@ -13,7 +13,6 @@ use Auth;
 use App\Http\Controllers\Admin\AdminChallengeController;
 use Http;
 
-use Illuminate\Support\Facades\Log;
 class UserResultController
 {
     /**
@@ -146,13 +145,11 @@ class UserResultController
                                     $chData->save();
                                 }
                                 if($request->result == 'Loss'){
-
-                                    $a_amount = $this->calculateCom($chData->amount);
-                                    $f_amount = 2 * $chData->amount - $a_amount;
-                                    $ff_amount   =   (2 * $chData->amount - $a_amount);
-                                    $p_amount = $f_amount - $chData->amount;
-                                    $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
-
+                                    $a_amount   =   $this->calculateCom($chData->amount);
+                                   // $f_amount   =   (2 * $chData->amount - $a_amount);
+                                    $f_amount   =   ($chData->amount - $a_amount);
+                                   $ff_amount   =   (2 * $chData->amount - $a_amount);
+                                    $r_amount   =   0.02 * $chData->amount;
                                     $chData->status =   0;
                                     $chData->save();
                                     $txn        =   $this->createTxn($request,$f_amount,$a_amount,'Won',$chData->o_id,$ff_amount);
@@ -169,12 +166,8 @@ class UserResultController
                             break;
                             case 'Loss':
                                 if($request->result == 'Won'){
-
-                                    $a_amount = $this->calculateCom($chData->amount);
-                                    $f_amount = 2 * $chData->amount - $a_amount;
-                                    $p_amount = $f_amount - $chData->amount;
-                                    $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
-
+                                    $a_amount   =   $this->calculateCom($chData->amount);
+                                    $f_amount   =   ( $chData->amount - $a_amount);
 									$ff_amount   =   (2 * $chData->amount - $a_amount);
 
                                    // $f_amount   =   (2 * $chData->amount - $a_amount);
@@ -234,14 +227,12 @@ class UserResultController
                                     $chData->save();
                                 }
                                 if($request->result == 'Loss'){
-                                    $a_amount = $this->calculateCom($chData->amount);
-                                    $f_amount = 2 * $chData->amount - $a_amount;
-                                    $p_amount = $f_amount - $chData->amount;
-                                    $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
-
+                                    $a_amount   =   $this->calculateCom($chData->amount);
+                                   // $f_amount   =   (2 * $chData->amount - $a_amount);
 									$ff_amount   =   (2 * $chData->amount - $a_amount);
 
                                     $f_amount   =   ($chData->amount - $a_amount);
+                                    $r_amount   =   0.02 * $chData->amount;
                                     $chData->status =   0;
                                     $chData->save();
                                     $txn        =   $this->createTxn($request,$f_amount,$a_amount,'Won',$chData->c_id,$ff_amount);
@@ -258,13 +249,11 @@ class UserResultController
                             break;
                             case 'Loss':
                                 if($request->result == 'Won'){
-                                    $a_amount = $this->calculateCom($chData->amount);
-                                    $f_amount = 2 * $chData->amount - $a_amount;
-                                    $p_amount = $f_amount - $chData->amount;
-                                    $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
-
+                                    $a_amount   =   $this->calculateCom($chData->amount);
+                                    //$f_amount   =   (2 * $chData->amount - $a_amount);
                                     $ff_amount   =   (2 * $chData->amount - $a_amount);
-
+                                    $f_amount   =   ($chData->amount - $a_amount);
+                                    $r_amount   =   0.02 * $chData->amount;
                                     $chData->status =   0;
                                     $chData->save();
                                     $txn        =   $this->createTxn($request,$f_amount,$a_amount,'Won',$chData->o_id,$ff_amount);
@@ -321,22 +310,14 @@ class UserResultController
         }
     }
 
-    private function calculateCom($amount)
-    {
-        if ($amount >= 50 && $amount <= 250) {
-            \Log::info("Commission for amount UserResult Controller {$amount}: 10% of {$amount}");
-            return 10 / 100 * $amount;  // 10% commission for amounts between 50 and 250
-        } elseif ($amount > 250 && $amount <= 500) {
-            \Log::info("Commission for amount UserResult Controller {$amount}: Fixed 25 rupees");
-            return 25;  // Fixed 25 rupees commission for amounts between 250 and 500
-        } elseif ($amount > 500) {
-            \Log::info("Commission for amount UserResult Controller {$amount}: 5% of {$amount}");
-            return 5 / 100 * $amount;  // 5% commission for amounts above 500
+    private function calculateCom($amount){
+        if($amount > 0 && $amount <= 250){
+        $a_amount	=	10/100*($amount);
+        }else{
+        $a_amount	=	5/100*($amount); //5/100
         }
-        \Log::info("No commission applied for amount UserResult Controller {$amount}");
-        return 0;
+        return $a_amount;
     }
-
 
     private function updateWallet($amount,$user_id){
         $walletData =   User::find($user_id);

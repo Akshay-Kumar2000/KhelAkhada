@@ -36,7 +36,7 @@
                         //	$('#d2').html(data.playChallenges);
                     }
                 });
-            },  5000);
+            }, 5000);
         });
     </script>
 
@@ -45,8 +45,8 @@
             style="dispaly:none;position:fixed;top:50px;width:100%;z-index:100;">
             <span id="success-error-message"></span>
         </div>
-        @if($notice != '')
-        <span class="btn btn-danger" style="width:100%;font-size:12px"><b>Important</b>:- {{$notice}}</span>
+        @if ($notice != '')
+            <span class="btn btn-danger" style="width:100%;font-size:12px"><b>Important</b>:- {{ $notice }}</span>
         @endif
         <div id="content"></div>
 
@@ -84,11 +84,11 @@
                     '';
                 });
             </script>
-<style>
-        .no_animation *{
-            animation: none !important;
-        }
-    </style>
+            <style>
+                .no_animation * {
+                    animation: none !important;
+                }
+            </style>
             <div id="my-challenge-div">
                 <div id="rf2">
                     <div id="rp2"></div>
@@ -121,20 +121,21 @@
     <div class="divider-y"></div>
     <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
         crossorigin="anonymous"></script>
-    <!--<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"-->
-    <!--    integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous">-->
+    <!--<script src="https://cdn.socket.io/4.4.1/socket.io.min.js" -->
+        <!--    integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous">
+        -->
     <!--</script>-->
     <script>
         $(function() {
             $('#success-error-div').hide();
             $.ajaxSetup({
-				headers: {
-					'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-				}
-			});
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
 
             @if (isset($payment_status))
-                hideSuccessErrorDiv('alert-danger', 'alert-success', '{{$payment_status}}');
+                hideSuccessErrorDiv('alert-danger', 'alert-success', '{{ $payment_status }}');
             @endif
 
 
@@ -206,7 +207,7 @@
                         error: function(data) {
                             var errors = $.parseJSON(data.responseText);
                             hideSuccessErrorDiv('alert-success', 'alert-danger', errors
-                            .message);
+                                .message);
                         },
                         complete: function() {
                             $('#challenge-amount').val('');
@@ -437,8 +438,7 @@
                 var loading = document.getElementById(data.id + "-loading");
                 loading.setAttribute("src", "");
                 loading.setAttribute("src", "{{ asset('front/images/author.svg') }}");
-            } else if (data.o_id == user_id) {
-            } else {
+            } else if (data.o_id == user_id) {} else {
                 $('#chdiv-' + data.id).remove();
                 var htmlCode = playingGameHtml(data);
             }

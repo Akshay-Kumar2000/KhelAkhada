@@ -12,7 +12,6 @@ use App\UserSetting;
 use Auth;
 use Illuminate\Support\Facades\Validator;
 
-use Illuminate\Support\Facades\Log;
 // use Kreait\Firebase\Messaging\CloudMessage;
 // use Kreait\Firebase\Messaging;
 // use Kreait\Firebase\Messaging\Notification;
@@ -280,15 +279,10 @@ class AdminChallengeController extends Controller
             if($transaction){
 			$user_data = User::where('id', $request->user_id)->first();
 			$wallet = $user_data->wallet;
-                // $a_amount       =   $this->calculateCom($chData->amount);
-                // $f_amount       =   (2 * $chData->amount - $a_amount);
-                // $p_amount       =   ((2 * $chData->amount - $a_amount)-$chData->amount);
-                // $r_amount       =   0.02 * $chData->amount;
-
-                $a_amount = $this->calculateCom($chData->amount);
-                $f_amount = 2 * $chData->amount - $a_amount;
-                $p_amount = $f_amount - $chData->amount;
-                $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
+                $a_amount       =   $this->calculateCom($chData->amount);
+                $f_amount       =   (2 * $chData->amount - $a_amount);
+                $p_amount       =   ((2 * $chData->amount - $a_amount)-$chData->amount);
+                $r_amount       =   0.02 * $chData->amount;
 
 				$closing_balance = 	 $wallet+$f_amount;
                 $winner         = Transaction::create([
@@ -339,14 +333,9 @@ class AdminChallengeController extends Controller
 			$user_data = User::where('id', $user_id)->first();
 			$wallet = $user_data->wallet;
 
-                // $a_amount       =   $this->calculateCom($chData->amount);
-                // $f_amount       =   (2 * $chData->amount - $a_amount);
-                // $r_amount       =   0.02 * $chData->amount;
-
-                $a_amount = $this->calculateCom($chData->amount);
-                $f_amount = 2 * $chData->amount - $a_amount;
-                // $p_amount = $f_amount - $chData->amount;
-                $r_amount = 0.02 * $chData->amount;  // Referral amount, if applicable
+                $a_amount       =   $this->calculateCom($chData->amount);
+                $f_amount       =   (2 * $chData->amount - $a_amount);
+                $r_amount       =   0.02 * $chData->amount;
 
 				$closing_balance = 	 $wallet+$f_amount;
 
@@ -425,23 +414,16 @@ class AdminChallengeController extends Controller
         return 1;
     }
 
-
-    private function calculateCom($amount)
-    {
-        if ($amount >= 50 && $amount <= 250) {
-            \Log::info("Commission  amount {$amount}: 10% of {$amount}");
-            return 10 / 100 * $amount;  // 10% commission for amounts between 50 and 250
-        } elseif ($amount > 250 && $amount <= 500) {
-            \Log::info("Commission  amount {$amount}: Fixed 25 rupees");
-            return 25;  // Fixed 25 rupees commission for amounts between 250 and 500
-        } elseif ($amount > 500) {
-            \Log::info("Commission  amount {$amount}: 5% of {$amount}");
-            return 5 / 100 * $amount;  // 5% commission for amounts above 500
+    private function calculateCom($amount){
+        if($amount > 0 && $amount <=250){
+            $a_amount	=	10/100*($amount);
+        }elseif($amount > 250 && $amount <=500){
+            $a_amount	=	25;
+        }elseif($amount > 500){
+        $a_amount	=	5/100*($amount); //5/100
         }
-        \Log::info("No commission applied for amount {$amount}");
-        return 0;
+        return $a_amount;
     }
-
 
     private function updateReferral($request, $amount, $user_id){
         $usertData =   User::with('setting')->find($user_id);

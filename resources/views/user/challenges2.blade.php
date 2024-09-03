@@ -1,5 +1,27 @@
 @extends('layouts.front.front')
 @section('content')
+    <style>
+        /*#rp3 .betCard{*/
+        /*    animation: none !important;*/
+        /*}*/
+        /*#rp4 .betCard{*/
+        /*    animation: none !important;*/
+        /*}*/
+        /*.betCard > div > div:nth-child(2) > .betCard-subTitle{*/
+        /*    display:none;*/
+        /*}*/
+
+        /*.betCard > div > div:nth-child(2) > div > .betCard-amount{*/
+        /*    display:none;*/
+        /*}*/
+        /*.betCard > div > div:nth-child(2) > div > img{*/
+        /*    display:none;*/
+        /*}*/
+
+        /*.betCard > div.d-flex > div.betCard-title{*/
+        /*    display:none !important;*/
+        /*}*/
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <div class="main-area" style="padding-top: 70px;">
@@ -94,7 +116,7 @@
                 @endif
 
 
-                let ip_address = 'https://server.khelakhada.com/';
+                let ip_address = 'https://server.akadda.com/';
                 let socket = io(ip_address);
                 socket.emit('initialise_data', true);
                 socket.on('createChallengeClient', (data) => {
@@ -143,6 +165,35 @@
                     let htmlCode = playingGameHtml(data);
                     $('#rp3').append(htmlCode);
                 });
+
+                // $('#challenge-amount').keyup(function(e)
+                // {
+                // 	var amount	=	$('#challenge-amount').val();
+                // 	var flag			=	1;
+                // 	var valid			=	1;
+
+                // 	if(!amount){
+                // 		$('#challenge-amount-error').text('Please enter amount');
+                // 		$('#challenge-amount-error').addClass('error');
+                // 		$('#challenge-amount-error').show();
+                // 		flag = 0;
+                // 	}else if(! $.isNumeric(amount)){
+                // 		$('#challenge-amount-error').text('Please enter numeric value');
+                // 		$('#challenge-amount-error').addClass('error');
+                // 		$('#challenge-amount-error').show();
+                // 		$('#challenge-amount').val('');
+                // 		flag = 0;
+                // 	}else if(!(amount == 30 || amount == 40 || amount%50==0)){
+                // 		$('#challenge-amount-error').text('Invalid amount!');
+                // 		$('#challenge-amount-error').addClass('error');
+                // 		$('#challenge-amount-error').show();
+                // 		flag = 0;
+                // 	}else{
+                // 		$('#challenge-amount-error').text('');
+                // 		$('#challenge-amount-error').removeClass('error');
+                // 		$('#challenge-amount-error').hide();
+                // 	}
+                // });
 
                 $('#create-challenge').submit(function(e) {
                     e.preventDefault();
@@ -237,7 +288,7 @@
             }
 
             function createSocket() {
-                let socket = io('https://server.khelakhada.com/');
+                let socket = io('https://server.akadda.com/');
                 return socket;
             }
 
@@ -287,21 +338,15 @@
 
             function getPrizeAmount(amount) {
                 var prize;
-
                 if (amount > 0 && amount <= 250) {
                     prize = (2 * amount) - (10 / 100 * amount);
                 } else if (amount > 250 && amount <= 500) {
-                    prize = (2 * amount) - 25;
+                    prize = ((amount * 2) - 25);
                 } else if (amount > 500) {
-                    prize = (2 * amount) - (5 / 100 * amount);
+                    prize = (amount * 2) - (5 / 100 * amount);
                 }
-
-                // Store in local storage
-                localStorage.setItem('calculatedPrize', prize);
-                console.log(`Prize stored in localStorage: ${prize}`);
                 return prize;
             }
-
 
             function playingGameHtml(data) {
                 var html = '';

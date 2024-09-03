@@ -66,17 +66,16 @@
                                     @foreach ($challenges as $key => $val)
                                         <tr>
                                             <th scope="row">{{ $val->id }}</th>
-                                            {{-- <td>{{ $val->creator->username }}</td> --}}
                                             <td>{{ $val->creator ? $val->creator->username : 'N/A' }}</td>
                                             <td>{{ $val->amount }}</td>
-                                            <td>{{ @$val->opponent->username }}</td>
+                                            <td>{{ $val->opponent ? $val->opponent->username : 'N/A' }}</td>
                                             <td>{{ $val->type }}</td>
                                             <td>{{ $val->rcode }}</td>
                                             <td>
                                                 @if (isset($val->result->is_cancel) && $val->result->is_cancel == 1)
                                                     Cancelled
                                                 @else
-                                                    {{ @$val->result->winner->username }}
+                                                    {{ $val->result && $val->result->winner ? $val->result->winner->username : 'N/A' }}
                                                 @endif
                                             </td>
                                             <td>{{ $val->created_at }}</td>
@@ -109,8 +108,9 @@
                                             </td>
                                             <td>
                                                 @can('manage_challenge')
-                                                    <a href="{{ url('admin/challenge/' . $val->id) }}"><i
-                                                            class="ik ik-eye  text-blue f-16" title="View details"></i></a>
+                                                    <a href="{{ url('admin/challenge/' . $val->id) }}">
+                                                        <i class="ik ik-eye text-blue f-16" title="View details"></i>
+                                                    </a>
                                                     @if ($val->status != 0 && $val->status != 5)
                                                         <a href="{{ url('admin/challenge/roomcode/' . $val->id) }}"
                                                             style="color:red">Room Code</a>
