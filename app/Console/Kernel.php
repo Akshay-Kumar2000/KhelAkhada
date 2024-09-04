@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Http\Controllers\User\PaymentController;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -14,6 +15,10 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('payment:check-status')->everyMinute(); // or any suitable interval
+
+        $schedule->call(function () {
+            (new PaymentController)->processPendingPayments();
+        })->everyMinute(); // Adjust the interval as needed
     }
 
     /**
@@ -25,4 +30,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
 }

@@ -1,11 +1,11 @@
 @extends('layouts.front.front')
 @section('content')
 <div class="main-area" style="padding-top: 60px;"><div class="cxy flex-column mx-4" style="margin-top: 70px;"><img src="{{asset('front/images/support.jpg')}}" width="280px" alt=""><div class="games-section-title mt-4 text-center" style="font-size: 1em;">
-  
+
       <p>(Monday to Saturday)</p>
     <p>Support timing is from 11:00AM to 8:00PM</p>
      <!-----Live whatsapp Start----->
-  <a href="https://wa.me/918949148678" target="_blank" class="text-decoration-none text-white w-100">
+  {{-- <a href="https://wa.me/918949148678" target="_blank" class="text-decoration-none text-white w-100"> --}}
   <button class="btn btn-success btn-lg mb-3 d-flex align-items-center justify-content-center w-100">
     <div class="hstack gap-2">
      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor" class="me-2">
@@ -26,7 +26,7 @@
       <span class="text-capitalize">live chat</span>
     </div></button></a>
   <!-----Live Chat END----->
-  
+
   <!-----Teligram----->
   <a href="tg://msg?to=6375030393" target="_blank" class="text-decoration-none text-black w-100">
   <button class="btn btn-dark btn-lg mb-3 d-flex align-items-center justify-content-center w-100">
@@ -37,7 +37,7 @@
       <span class="text-capitalize text-black">Telegram</span>
     </div></button></a>
   <!-----Teligram----->
-  
+
   <!-----Instagram----->
   <a href="#" class="text-decoration-none text-white w-100" target="blank">
     <button class="btn btn-lg text-white d-flex align-items-center justify-content-center w-100" style="background: linear-gradient(45deg, rgb(240, 148, 51) 0%, rgb(230, 104, 60) 25%, rgb(220, 39, 67) 50%, rgb(204, 35, 102) 75%, rgb(188, 24, 136) 100%);">
@@ -50,9 +50,9 @@
       </div></button>
   </a>
   <!-----Instagram----->
-  
-  
-  
+
+
+
    </div></div></div>
 
 
@@ -62,7 +62,7 @@
 
          <div class="divider-y"></div>
 <style>
- 
+
 button {
     /* background-color: green; */
     color: green;

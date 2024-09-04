@@ -64,17 +64,20 @@ if (Setting::where('id', 3)->first()->field_value == 'yes') {
 }
 
 
+// this is done by me
 Route::get('/', function (Request $request) {
-    if (isset($request->pgstatus) && $request->pgstatus == "success") {
-        $payment = new PaymentController();
-        $payment->upiStatusCheck(); // Process the current payment immediately
+    if(isset($request->pgstatus)){
+        if($request->pgstatus == "success"){
+            $payment = new PaymentController();
+            $payment->upiStatusCheck();
+        }
     }
 
     $status = Setting::where('id', 3)->first();
     $kyc = 0;
 
     if (Auth::check()) { // Ensure the user is authenticated
-        $user_id = Auth::id();
+        $user_id = Auth::user()->id;
         $user_kyc = UserData::where('user_id', $user_id)->first();
         if ($user_kyc) {
             $kyc = $user_kyc->verify_status;
@@ -87,33 +90,6 @@ Route::get('/', function (Request $request) {
 
     return view('front.welcome', compact('kyc'));
 })->name('front.apnaludo');
-
-// this is done by me
-// Route::get('/', function (Request $request) {
-//     if(isset($request->pgstatus)){
-//         if($request->pgstatus == "success"){
-//             $payment = new PaymentController();
-//             $payment->upiStatusCheck();
-//         }
-//     }
-
-//     $status = Setting::where('id', 3)->first();
-//     $kyc = 0;
-
-//     if (Auth::check()) { // Ensure the user is authenticated
-//         $user_id = Auth::user()->id;
-//         $user_kyc = UserData::where('user_id', $user_id)->first();
-//         if ($user_kyc) {
-//             $kyc = $user_kyc->verify_status;
-//         }
-//     }
-
-//     if ($status && $status->field_value == "no") {
-//         // Logic if status field_value is "no"
-//     }
-
-//     return view('front.welcome', compact('kyc'));
-// })->name('front.apnaludo');
 
 
 // this is done by previous developer
