@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\PaymentOrder;
+use App\PaymentOrder;
 use GuzzleHttp\Client;
 
 class CheckPaymentStatus extends Command

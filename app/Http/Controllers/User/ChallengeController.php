@@ -334,8 +334,8 @@ class ChallengeController extends Controller
         $output2 = "";
 
         foreach ($challenges as $key => $val) {
-            $a_amount = (5 / 100) * $val->amount;
-            $prize = 2 * $val->amount - $a_amount;
+            $a_amount = $this->calculateCom($val->amount);
+            $prize = (2 * $val->amount) - $a_amount;
 
             if ($val->c_id == Auth::user()->id) {
                 $output2 .=

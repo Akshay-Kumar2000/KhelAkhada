@@ -270,10 +270,10 @@ class PaymentController
                 "trxnote" => $user->username,
                 // "redirecturl" => "https://game.bottomfunnel.net/",
                 // "mcallback_url" => "https://game.bottomfunnel.net/new-upi-gateway-response"
-                "redirecturl" => "http://192.168.29.247:8080/",
-                "mcallback_url" => "http://192.168.29.247:8080/new-upi-gateway-response"
-                // "redirecturl" => "https://khelakhada.com/",
-                // "mcallback_url" => "https://khelakhada.com/new-upi-gateway-response"
+                // "redirecturl" => "http://192.168.29.247:8080/",
+                // "mcallback_url" => "http://192.168.29.247:8080/new-upi-gateway-response"
+                "redirecturl" => "https://khelakhada.com/",
+                "mcallback_url" => "https://khelakhada.com/new-upi-gateway-response"
             ];
 
             $curl = curl_init();

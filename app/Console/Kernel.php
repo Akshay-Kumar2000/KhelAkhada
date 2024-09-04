@@ -14,11 +14,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->command('payment:check-status')->everyMinute(); // or any suitable interval
+        // $schedule->command('payment:check-status')->everyMinute(); // or any suitable interval
 
-        $schedule->call(function () {
-            (new PaymentController)->processPendingPayments();
-        })->everyMinute(); // Adjust the interval as needed
+        $schedule->job(new \App\Jobs\CheckPendingPayments)->everyMinute();
     }
 
     /**
