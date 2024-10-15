@@ -12,6 +12,7 @@ use App\PlayerUsername;
 use App\ChallengeJoin;
 use App\Transaction;
 use App\Setting;
+use App\UserResult;
 use App\RoomCode;
 use Auth;
 use DB;
@@ -40,12 +41,12 @@ class ChallengeController extends Controller
             return redirect('/logout');
         }
         //echo $user_id; die;
-        $myChallenges = DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = " . $user_id . " OR o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $challenges = DB::select("SELECT * FROM challenges WHERE NOT (c_id = " . $user_id . " and o_id = " . $user_id . ") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
+        $myChallenges       =   DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+        $challenges         =   DB::select("SELECT * FROM challenges WHERE NOT (c_id = ".$user_id." and o_id = ".$user_id.") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
         //$challenges       =   DB::select("select * from challenges where status = 1 and c_id != ".$user_id." and o_id != ".$user_id." and deleted_at is null ORDER BY id ASC");
-        $myPlayChallenges = DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = " . $user_id . " ) OR ((status = 4 or status = 5) and  o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $playChallenges = DB::select("SELECT * from challenges WHERE NOT (c_id = " . $user_id . " or o_id = " . $user_id . ") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
-        return view('user.challenges2', compact('notice', 'challenges', 'playChallenges', 'myChallenges', 'myPlayChallenges'));
+        $myPlayChallenges   =   DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = ".$user_id." ) OR ((status = 4 or status = 5) and  o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+        $playChallenges     =   DB::select("SELECT * from challenges WHERE NOT (c_id = ".$user_id." or o_id = ".$user_id.") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
+        return view('user.challenges2',compact('notice','challenges','playChallenges','myChallenges','myPlayChallenges'));
         // if(isset($request->test))
         // return view('user.challenges2',compact('notice','challenges','playChallenges','myChallenges','myPlayChallenges'));
         // else
@@ -54,29 +55,24 @@ class ChallengeController extends Controller
     private function calculateCom($amount)
     {
         if ($amount >= 50 && $amount <= 250) {
-            \Log::info("Commission  amount {$amount}: 10% of {$amount}");
+            // \Log::info("Commission  amount {$amount}: 10% of {$amount}");
             return 10 / 100 * $amount;  // 10% commission for amounts between 50 and 250
         } elseif ($amount > 250 && $amount <= 500) {
-            \Log::info("Commission  amount {$amount}: Fixed 25 rupees");
+            // \Log::info("Commission  amount {$amount}: Fixed 25 rupees");
             return 25;  // Fixed 25 rupees commission for amounts between 250 and 500
         } elseif ($amount > 500) {
-            \Log::info("Commission  amount {$amount}: 5% of {$amount}");
+            // \Log::info("Commission  amount {$amount}: 5% of {$amount}");
             return 5 / 100 * $amount;  // 5% commission for amounts above 500
         }
-        \Log::info("No commission applied for amount {$amount}");
+        // \Log::info("No commission applied for amount {$amount}");
         return 0;
     }
 
     public function ajax_chalange()
     {
-        \Log::info("ajax_chalange method called.");
-
         $url = URL::to("../public/") . "/";
         $wurl = URL::to("/") . "/";
         $user_id = Auth::user()->id;
-
-        \Log::info("User ID: {$user_id}");
-
         $myChallenges = DB::select(
             "select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = " .
             $user_id .
@@ -84,8 +80,6 @@ class ChallengeController extends Controller
             $user_id .
             ") and deleted_at is null ORDER BY id ASC"
         );
-
-        \Log::info("Challenges retrieved: " . json_encode($myChallenges));
 
         $output = "";
         foreach ($myChallenges as $key => $mval) {
@@ -97,230 +91,227 @@ class ChallengeController extends Controller
             //     $a_amount = 25;
             // } elseif ($mval->amount > 500) {
             // }
-            // $a_amount = (5 / 100) * $mval->amount;
-            // $prize = 2 * ($mval->amount - $a_amount);
+            $a_amount = (5 / 100) * $mval->amount;
+            $prize = 2 * ($mval->amount - $a_amount);
             // $prize  =   (2 * $mval->amount) - $a_amount;
-
-            try {
-                // Existing logic
-                $a_amount = $this->calculateCom($mval->amount);
-                \Log::info("Original amount: {$mval->amount}, Calculated commission: {$a_amount}");
-                $prize = (2 * $mval->amount) - $a_amount;
-                \Log::info("Final prize for amount {$mval->amount}: {$prize}");
-            } catch (\Exception $e) {
-                \Log::error("Error in prize calculation: " . $e->getMessage());
-            }
-
 
             if ($mval->status == 1 && $mval->c_id == Auth::user()->id) {
                 $output .=
-                    '<div id="p1">
-                <div class="betCard mt-1" id="chdiv-' .
-                    $mval->id .
-                    '">
-                    <div class="d-flex">
-                      <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR
-                      <img class="mx-1" src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                    $mval->amount .
-                    '</span>
-                        <div class="betCard-title d-flex align-items-center text-uppercase">
-                            <span class="ml-auto" id=' .
-                    $mval->id .
-                    '-buttons">
-                                <button class="btn btn-danger px-3 btn-sm" onclick="cancelChallengeCre(' .
-                    $mval->id .
-                    ')">DELETE</button>
-                            </span>
+                '<div id="p1">
+                    <div class="betCard mt-1" id="chdiv-' .
+                $mval->id .
+                '">
+                        <div class="d-flex">
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR
+                        <img class="mx-1" src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+                $mval->amount .
+                '</span>
+                            <div class="betCard-title d-flex align-items-center text-uppercase">
+                                <span class="ml-auto" id=' .
+                $mval->id .
+                '-buttons">
+                                    <button class="btn btn-danger px-3 btn-sm" onclick="cancelChallengeCre(' .
+                $mval->id .
+                ')">DELETE</button>
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="py-1 row">
-                        <div class="pr-3 text-center col-5">
-                        <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName">' .
-                    $mval->cname .
-                    '</span></div>
-                        </div>
-                        <div class="pr-3 text-center col-2 cxy">
-                        <div>
-                        v/s
-                        </div>
-                        </div>
-                        <div class="text-center col-5">
-                        <div class="pl-2">
-                        <img class="border-50" id="' .
-                    $mval->id .
-                    '-loading" src="front/images/small-loading.gif" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName" id="' .
-                    $mval->id .
+                        <div class="py-1 row">
+                            <div class="pr-3 text-center col-5">
+                            <div class="pl-2"><img class="border-50" src="' .
+                $url .
+                'front/images/author.svg" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName">' .
+                $mval->cname .
+                '</span></div>
+                            </div>
+                            <div class="pr-3 text-center col-2 cxy">
+                            <div>
+                            v/s
+                            </div>
+                            </div>
+                            <div class="text-center col-5">
+                            <div class="pl-2">
+                            <img class="border-50" id="' .
+                $mval->id .
+                '-loading" src="' .
+                $url .
+                'front/images/small-loading.gif" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName" id="' .
+                $mval->id .
                     '-finding">Finding Player</span></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-        </div>';
+            </div>';
             } elseif ($mval->status == 1 && $mval->o_id == Auth::user()->id) {
                 $output .=
-                    ' <div id="p2">
-                      <div id="chdiv-' .
-                    $mval->id .
-                    '" class="betCard mt-1">
-                          <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM ' .
-                    $mval->cname .
-                    ' </span>
-                          <div class="d-flex pl-3">
-                              <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                              <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $mval->amount .
-                    '</span>
-                              </div>
-                              </div>
-                              <div><span class="betCard-subTitle">Prize</span>
-                              <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $prize .
-                    '</span>
-                              </div>
-                              </div><button id=' .
-                    $mval->id .
-                    '-play" class="bg-secondary playButton cxy" onclick="playChallenge(' .
-                    $mval->id .
+                ' <div id="p2">
+                        <div id="chdiv-' .
+                $mval->id .
+                '" class="betCard mt-1">
+                            <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM ' .
+                $mval->cname .
+                ' </span>
+                            <div class="d-flex pl-3">
+                                <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                                <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $mval->amount .
+                '</span>
+                                </div>
+                                </div>
+                                <div><span class="betCard-subTitle">Prize</span>
+                                <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $prize .
+                '</span>
+                                </div>
+                                </div><button id=' .
+                $mval->id .
+                '-play" class="bg-secondary playButton cxy" onclick="playChallenge(' .
+                $mval->id .
                     ');">Play</button>
-                          </div>
-                      </div>
-            </div>';
+                            </div>
+                        </div>
+                </div>';
             } elseif ($mval->status == 2 && $mval->c_id == Auth::user()->id) {
                 $output .=
-                    '<div id="p3">
-                <div class="betCard mt-1" id="chdiv-' .
-                    $mval->id .
-                    '">
-                    <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
-                            class="mx-1" src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                    $prize .
-                    '</span>
-                        <div class="betCard-title d-flex align-items-center text-uppercase">
-                            <span class="ml-auto" id="' .
-                    $mval->id .
-                    '-buttons">
+                '<div id="p3">
+                    <div class="betCard mt-1" id="chdiv-' .
+                $mval->id .
+                '">
+                        <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
+                                class="mx-1" src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+                $prize .
+                '</span>
+                            <div class="betCard-title d-flex align-items-center text-uppercase">
+                                <span class="ml-auto" id="' .
+                $mval->id .
+                '-buttons">
 
-                            <a href="/challenge-detail/' .
-                    $mval->id .
-                    '">
-                                <button id="' .
-                    $mval->id .
-                    '-accept" class="btn btn-success px-3 btn-sm" style="cursor: pointer;float: left;width: 65px;height: 31px;"
-                                 onclick="acceptChallenge(' .
-                    $mval->id .
-                    ')">START</button>
-                                 </a>
-                                <button id="' .
-                    $mval->id .
-                    '-deny" class="btn btn-danger px-3 btn-sm" style="cursor: pointer;float: right;width: 72px;height: 31px;"
-                                 onclick="denyChallenge(' .
-                    $mval->id .
-                    ')">REJECT</button>
-                            </span>
+                                <a href="/challenge-detail/' .
+                $mval->id .
+                '">
+                                    <button id="' .
+                $mval->id .
+                '-accept" class="btn btn-success px-3 btn-sm" style="cursor: pointer;float: left;width: 65px;height: 31px;"
+                                    onclick="acceptChallenge(' .
+                $mval->id .
+                ')">START</button>
+                                    </a>
+                                    <button id="' .
+                $mval->id .
+                '-deny" class="btn btn-danger px-3 btn-sm" style="cursor: pointer;float: right;width: 72px;height: 31px;"
+                                    onclick="denyChallenge(' .
+                $mval->id .
+                ')">REJECT</button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="py-1 row">
+                            <div class="pr-3 text-center col-5">
+                            <div class="pl-2"><img class="border-50" src="' .
+                $url .
+                'front/images/author.svg" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName">' .
+                $mval->cname .
+                '</span></div>
+                            </div>
+                            <div class="pr-3 text-center col-2 cxy">
+                            <div>v/s</div>
+                            </div>
+                            <div class="text-center col-5">
+                            <div class="pl-2"><img class="border-50" src="' .
+                $url .
+                'front/images/author.svg" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName">' .
+                $mval->oname .
+                    '</span></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="py-1 row">
-                        <div class="pr-3 text-center col-5">
-                        <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName">' .
-                    $mval->cname .
-                    '</span></div>
-                        </div>
-                        <div class="pr-3 text-center col-2 cxy">
-                        <div>v/s</div>
-                        </div>
-                        <div class="text-center col-5">
-                        <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName">' .
-                    $mval->oname .
-                    '</span></div>
-                        </div>
-                    </div>
-                </div>
-      </div>';
+        </div>';
             } elseif ($mval->status == 2 && $mval->o_id == Auth::user()->id) {
                 $output .=
-                    '<div id="p4">
-                <div id="chdiv-' .
-                    $mval->id .
-                    '" class="betCard mt-1">
-                    <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">You </span></span>
-                    <div class="d-flex pl-3">
-                        <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $mval->amount .
-                    '</span>
-                        </div>
-                        </div>
-                        <div><span class="betCard-subTitle">Prize</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $prize .
-                    '</span>
-                        </div>
-                        </div>
-                        <button id="' .
-                    $mval->id .
-                    '-requested" class="bg-warning playButton cxy" onclick="cancelChallengeReq(' .
-                    $mval->id .
+                '<div id="p4">
+                    <div id="chdiv-' .
+                $mval->id .
+                '" class="betCard mt-1">
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">You </span></span>
+                        <div class="d-flex pl-3">
+                            <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $mval->amount .
+                '</span>
+                            </div>
+                            </div>
+                            <div><span class="betCard-subTitle">Prize</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $prize .
+                '</span>
+                            </div>
+                            </div>
+                            <button id="' .
+                $mval->id .
+                '-requested" class="bg-warning playButton cxy" onclick="cancelChallengeReq(' .
+                $mval->id .
                     ')">Requested</button>
+                        </div>
                     </div>
-                </div>
-      </div>';
+        </div>';
             } elseif ($mval->status == 3 && $mval->o_id == Auth::user()->id) {
                 $output .=
-                    '  <div id="p5">
-                <div id="chdiv-' .
-                    $mval->id .
-                    '" class="betCard mt-1">
-                    <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
-                    $mval->cname .
-                    ' </span></span>
-                    <div class="d-flex pl-3">
-                        <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $mval->amount .
-                    '</span>
-                        </div>
-                        </div>
-                        <div><span class="betCard-subTitle">Prize</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $prize .
-                    '</span>
-                        </div>
-                        </div>
-                        <a href="/challenge-detail/' .
-                    $mval->id .
-                    '">
-                        <button id="' .
-                    $mval->id .
-                    '-start-btn" class="bg-success playButton cxy" onclick="startChallenge(' .
-                    $mval->id .
+                '  <div id="p5">
+                    <div id="chdiv-' .
+                $mval->id .
+                '" class="betCard mt-1">
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
+                $mval->cname .
+                ' </span></span>
+                        <div class="d-flex pl-3">
+                            <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $mval->amount .
+                '</span>
+                            </div>
+                            </div>
+                            <div><span class="betCard-subTitle">Prize</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $prize .
+                '</span>
+                            </div>
+                            </div>
+                            <a href="/challenge-detail/' .
+                $mval->id .
+                '">
+                            <button id="' .
+                $mval->id .
+                '-start-btn" class="bg-success playButton cxy" onclick="startChallenge(' .
+                $mval->id .
                     ')">START</button>
-                        </a>
+                            </a>
+                        </div>
                     </div>
-                </div>
-      </div>';
+        </div>';
             }
         }
         $challenges = DB::select(
@@ -334,77 +325,77 @@ class ChallengeController extends Controller
         $output2 = "";
 
         foreach ($challenges as $key => $val) {
-            $a_amount = $this->calculateCom($val->amount);
-            $prize = (2 * $val->amount) - $a_amount;
+            $a_amount = (5 / 100) * $val->amount;
+            $prize = 2 * $val->amount - $a_amount;
 
             if ($val->c_id == Auth::user()->id) {
                 $output2 .=
-                    '<div id="p6">
-                <div id="chdiv-' .
-                    $val->id .
-                    '" class="betCard mt-1">
-                    <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">You </span></span>
-                    <div class="d-flex pl-3">
-                        <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $val->amount .
-                    '</span>
-                        </div>
-                        </div>
-                        <div><span class="betCard-subTitle">Prize</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $prize .
-                    '</span>
-                        </div>
-                        </div>
-                        <span class="ml-auto" id="' .
-                    $val->id .
-                    '-buttons">
-                            <button class="bg-danger playButton cxy" onclick="cancelChallengeCre(' .
-                    $val->id .
+                '<div id="p6">
+                    <div id="chdiv-' .
+                $val->id .
+                '" class="betCard mt-1">
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">You </span></span>
+                        <div class="d-flex pl-3">
+                            <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $val->amount .
+                '</span>
+                            </div>
+                            </div>
+                            <div><span class="betCard-subTitle">Prize</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $prize .
+                '</span>
+                            </div>
+                            </div>
+                            <span class="ml-auto" id="' .
+                $val->id .
+                '-buttons">
+                                <button class="bg-danger playButton cxy" onclick="cancelChallengeCre(' .
+                $val->id .
                     ')">Cancel</button>
-                        </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>';
+            } elseif ($val->c_id != Auth::user()->id) {
+                $output2 .=
+                '<div id="p7">
+                    <div id="chdiv-' .
+                $val->id .
+                '" class="betCard mt-1">
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
+                $val->cname .
+                ' </span></span>
+                        <div class="d-flex pl-3">
+                            <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $val->amount .
+                '</span>
+                            </div>
+                            </div>
+                            <div><span class="betCard-subTitle">Prize</span>
+                            <div><img src="' .
+                $url .
+                'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
+                $prize .
+                '</span>
+                            </div>
+                            </div><button id="' .
+                $val->id .
+                '-play" class="bg-secondary playButton cxy" onclick="playChallenge(' .
+                $val->id .
+                    ');">Play</button>
+                        </div>
                     </div>
                 </div>
             </div>';
-            } elseif ($val->c_id != Auth::user()->id) {
-                $output2 .=
-                    '<div id="p7">
-                <div id="chdiv-' .
-                    $val->id .
-                    '" class="betCard mt-1">
-                    <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
-                    $val->cname .
-                    ' </span></span>
-                    <div class="d-flex pl-3">
-                        <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $val->amount .
-                    '</span>
-                        </div>
-                        </div>
-                        <div><span class="betCard-subTitle">Prize</span>
-                        <div><img src="' .
-                    $url .
-                    'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
-                    $prize .
-                    '</span>
-                        </div>
-                        </div><button id="' .
-                    $val->id .
-                    '-play" class="bg-secondary playButton cxy" onclick="playChallenge(' .
-                    $val->id .
-                    ');">Play</button>
-                    </div>
-                </div>
-            </div>
-        </div>';
             }
         }
         $fakechallenges = DB::select(
@@ -415,35 +406,35 @@ class ChallengeController extends Controller
             $prize = 2 * $val->amount - $a_amount;
             $output2 .=
                 '<div id="p7">
-                <div id="chdiv-' .
+                    <div id="chdiv-' .
                 $val->id .
                 '" class="betCard mt-1">
-                    <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
+                        <span class="betCard-title pl-3 d-flex align-items-center text-uppercase">CHALLENGE FROM<span class="ml-1" style="color: #072c92;">' .
                 $val->cname .
                 ' </span></span>
-                    <div class="d-flex pl-3">
-                        <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
-                        <div><img src="' .
+                        <div class="d-flex pl-3">
+                            <div class="pr-3 pb-1"><span class="betCard-subTitle">Entry Fee</span>
+                            <div><img src="' .
                 $url .
                 'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
                 $val->amount .
                 '</span>
-                        </div>
-                        </div>
-                        <div><span class="betCard-subTitle">Prize</span>
-                        <div><img src="' .
+                            </div>
+                            </div>
+                            <div><span class="betCard-subTitle">Prize</span>
+                            <div><img src="' .
                 $url .
                 'front/images/global-rupeeIcon.png" width="21px" alt=""><span class="betCard-amount">' .
                 $prize .
                 '</span>
-                        </div>
-                        </div><button id="' .
+                            </div>
+                            </div><button id="' .
                 $val->id .
                 '-play" class="bg-secondary playButton cxy" onclick="">Play</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>';
+            </div>';
         }
         $myPlayChallenges = DB::select(
             "select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = " .
@@ -457,45 +448,49 @@ class ChallengeController extends Controller
             $a_amount = (5 / 100) * $mpval->amount;
             $prize = 2 * $mpval->amount - $a_amount;
             $output3 .=
-                '
-                <div class="betCard mt-1" id="myplaying-chdiv-' .
-                $mpval->id .
-                '" >
-                    <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
-                            class="mx-1" src="' .
-                $url .
-                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                $prize .
-                '</span>
-                        <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto">
-                            <a href="' .
-                $wurl .
-                "challenge-detail/" .
-                $mpval->id .
-                '"  class="btn btn-info px-3 btn-sm" >View</a>
-                        </span></div>
-                    </div>
-                    <div class="py-1 row">
-                        <div class="pr-3 text-center col-5">
-                        <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $mpval->cname .
+            '
+                    <div class="betCard mt-1" id="myplaying-chdiv-' .
+            $mpval->id .
+            '" >
+                        <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
+                                class="mx-1" src="' .
+            $url .
+            'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+            $prize .
+            '</span>
+                            <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto">
+                                <a href="' .
+            $wurl .
+            "challenge-detail/" .
+            $mpval->id .
+            '"  class="btn btn-info px-3 btn-sm" >View</a>
+                            </span></div>
+                        </div>
+                        <div class="py-1 row">
+                            <div class="pr-3 text-center col-5">
+                            <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $mpval->cname .
+            '</span></div>
+                            </div>
+                            <div class="pr-3 text-center col-2 cxy">
+                            <div>v/s</div>
+                            </div>
+                            <div class="text-center col-5">
+                            <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                                alt=""></div>
+                            <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $mpval->oname .
                 '</span></div>
-                        </div>
-                        <div class="pr-3 text-center col-2 cxy">
-                        <div>v/s</div>
-                        </div>
-                        <div class="text-center col-5">
-                        <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                            alt=""></div>
-                        <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $mpval->oname .
-                '</span></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-      ';
+        ';
         }
 
         $playChallenges = DB::select(
@@ -510,44 +505,48 @@ class ChallengeController extends Controller
             $a_amount = (5 / 100) * $pval->amount;
             $prize = 2 * $pval->amount - $a_amount;
             $output4 .=
-                '
-        <div class="betCard mt-1" id="playing-chdiv-' .
-                $pval->id .
-                '">
-        <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
-                class="mx-1" src="' .
-                $url .
-                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                $pval->amount .
-                '</span>
-            <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto mr-3">PRIZE<img
-                class="mx-1" src="' .
-                $url .
-                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                $prize .
-                '</span></div>
-        </div>
-        <div class="py-1 row">
-            <div class="pr-3 text-center col-5">
-            <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                alt=""></div>
-            <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $pval->cname .
-                '</span></div>
+            '
+            <div class="betCard mt-1" id="playing-chdiv-' .
+            $pval->id .
+            '">
+            <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
+                    class="mx-1" src="' .
+            $url .
+            'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+            $pval->amount .
+            '</span>
+                <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto mr-3">PRIZE<img
+                    class="mx-1" src="' .
+            $url .
+            'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+            $prize .
+            '</span></div>
             </div>
-            <div class="pr-3 text-center col-2 cxy">
-            <div>v/s</div>
-            </div>
-            <div class="text-center col-5">
-            <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                alt=""></div>
-            <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $pval->oname .
+            <div class="py-1 row">
+                <div class="pr-3 text-center col-5">
+                <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                    alt=""></div>
+                <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $pval->cname .
+            '</span></div>
+                </div>
+                <div class="pr-3 text-center col-2 cxy">
+                <div>v/s</div>
+                </div>
+                <div class="text-center col-5">
+                <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                    alt=""></div>
+                <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $pval->oname .
                 '</span></div>
+                </div>
             </div>
-        </div>
-        </div>
-       ';
+            </div>
+        ';
         }
         $fakeplayChallenges = DB::select(
             "SELECT * from fakechallenges WHERE (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC"
@@ -556,44 +555,48 @@ class ChallengeController extends Controller
             $a_amount = (5 / 100) * $pval->amount;
             $prize = 2 * $pval->amount - $a_amount;
             $output4 .=
-                '
-        <div class="betCard mt-1" id="playing-chdiv-' .
-                $pval->id .
-                '">
-        <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
-                class="mx-1" src="' .
-                $url .
-                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                $pval->amount .
-                '</span>
-            <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto mr-3">PRIZE<img
-                class="mx-1" src="' .
-                $url .
-                'front/images/global-rupeeIcon.png" width="21px" alt="">' .
-                $prize .
-                '</span></div>
-        </div>
-        <div class="py-1 row">
-            <div class="pr-3 text-center col-5">
-            <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                alt=""></div>
-            <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $pval->cname .
-                '</span></div>
+            '
+            <div class="betCard mt-1" id="playing-chdiv-' .
+            $pval->id .
+            '">
+            <div class="d-flex"><span class="betCard-title pl-3 d-flex align-items-center text-uppercase">PLAYING FOR<img
+                    class="mx-1" src="' .
+            $url .
+            'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+            $pval->amount .
+            '</span>
+                <div class="betCard-title d-flex align-items-center text-uppercase"><span class="ml-auto mr-3">PRIZE<img
+                    class="mx-1" src="' .
+            $url .
+            'front/images/global-rupeeIcon.png" width="21px" alt="">' .
+            $prize .
+            '</span></div>
             </div>
-            <div class="pr-3 text-center col-2 cxy">
-            <div>v/s</div>
-            </div>
-            <div class="text-center col-5">
-            <div class="pl-2"><img class="border-50" src="front/images/author.png" width="21px" height="21px"
-                alt=""></div>
-            <div style="line-height: 1;"><span class="betCard-playerName">' .
-                $pval->oname .
+            <div class="py-1 row">
+                <div class="pr-3 text-center col-5">
+                <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                    alt=""></div>
+                <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $pval->cname .
+            '</span></div>
+                </div>
+                <div class="pr-3 text-center col-2 cxy">
+                <div>v/s</div>
+                </div>
+                <div class="text-center col-5">
+                <div class="pl-2"><img class="border-50" src="' .
+            $url .
+            'front/images/author.svg" width="21px" height="21px"
+                    alt=""></div>
+                <div style="line-height: 1;"><span class="betCard-playerName">' .
+            $pval->oname .
                 '</span></div>
+                </div>
             </div>
-        </div>
-        </div>
-       ';
+            </div>
+        ';
         }
 
         return response()->json([
@@ -603,34 +606,31 @@ class ChallengeController extends Controller
             "playChallenges" => $output4,
         ]);
     }
-    public function ajax_open_battle()
-    {
+    public function ajax_open_battle(){
 
-        $user_id = Auth::user()->id;
-        //echo $user_id; die;
-        $myChallenges = DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = " . $user_id . " OR o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $challenges = DB::select("SELECT * FROM challenges WHERE NOT (c_id = " . $user_id . " and o_id = " . $user_id . ") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
-        //$challenges       =   DB::select("select * from challenges where status = 1 and c_id != ".$user_id." and o_id != ".$user_id." and deleted_at is null ORDER BY id ASC");
-        $myPlayChallenges = DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = " . $user_id . " ) OR ((status = 4 or status = 5) and  o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $playChallenges = DB::select("SELECT * from challenges WHERE NOT (c_id = " . $user_id . " or o_id = " . $user_id . ") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
-
-
-        return view('user.ajax_challenges', compact('challenges', 'playChallenges', 'myChallenges', 'myPlayChallenges'));
-    }
-
-    public function ajax_running_battle()
-    {
-
-        $user_id = Auth::user()->id;
-        //echo $user_id; die;
-        $myChallenges = DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = " . $user_id . " OR o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $challenges = DB::select("SELECT * FROM challenges WHERE NOT (c_id = " . $user_id . " and o_id = " . $user_id . ") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
-        //$challenges       =   DB::select("select * from challenges where status = 1 and c_id != ".$user_id." and o_id != ".$user_id." and deleted_at is null ORDER BY id ASC");
-        $myPlayChallenges = DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = " . $user_id . " ) OR ((status = 4 or status = 5) and  o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        $playChallenges = DB::select("SELECT * from challenges WHERE NOT (c_id = " . $user_id . " or o_id = " . $user_id . ") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
+        $user_id            =   Auth::user()->id;
+       //echo $user_id; die;
+       $myChallenges       =   DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+       $challenges         =   DB::select("SELECT * FROM challenges WHERE NOT (c_id = ".$user_id." and o_id = ".$user_id.") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
+       //$challenges       =   DB::select("select * from challenges where status = 1 and c_id != ".$user_id." and o_id != ".$user_id." and deleted_at is null ORDER BY id ASC");
+       $myPlayChallenges   =   DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = ".$user_id." ) OR ((status = 4 or status = 5) and  o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+       $playChallenges     =   DB::select("SELECT * from challenges WHERE NOT (c_id = ".$user_id." or o_id = ".$user_id.") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
 
 
-        return view('user.ajax_running_battle', compact('challenges', 'playChallenges', 'myChallenges', 'myPlayChallenges'));
+       return view('user.ajax_challenges',compact('challenges','playChallenges','myChallenges','myPlayChallenges'));
+   }
+    public function ajax_running_battle(){
+
+        $user_id            =   Auth::user()->id;
+    //echo $user_id; die;
+    $myChallenges       =   DB::select("select * from challenges where (status = 1 or status = 2 or status = 3) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+    $challenges         =   DB::select("SELECT * FROM challenges WHERE NOT (c_id = ".$user_id." and o_id = ".$user_id.") AND STATUS=1 and deleted_at IS NULL ORDER BY id ASC");
+    //$challenges       =   DB::select("select * from challenges where status = 1 and c_id != ".$user_id." and o_id != ".$user_id." and deleted_at is null ORDER BY id ASC");
+    $myPlayChallenges   =   DB::select("select * from challenges where ((status = 3 or status = 4 or status = 5) and c_id = ".$user_id." ) OR ((status = 4 or status = 5) and  o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+    $playChallenges     =   DB::select("SELECT * from challenges WHERE NOT (c_id = ".$user_id." or o_id = ".$user_id.") and (status = 2 or status = 3 or status = 4 or status =5 ) and deleted_at is null ORDER BY id ASC");
+
+
+    return view('user.ajax_running_battle',compact('challenges','playChallenges','myChallenges','myPlayChallenges'));
     }
     public function challengeListing(Request $request)
     {
@@ -651,34 +651,55 @@ class ChallengeController extends Controller
         return $number % 50 == 0;
     }
 
+    public function CheckGameActive($user_id){
+        $result = false;
+        $myChallenges       =   DB::select("select `id` from challenges where (status != 0) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+        foreach($myChallenges as $row){
+            $rslUpload  =  UserResult::where('ch_id',$row->id)->where('user_id',$user_id)->count();
+            if($rslUpload == 0){
+                $result = true;
+            }
+        }
+        return $result;
+    }
     public function create(Request $request)
     {
-        $user_id = Auth::user()->id;
+	   $user_id            =   Auth::user()->id;
 
         $request->validate([
             'amount' => 'required|numeric|gt:49'
         ]);
 
 
-        $chk = $this->checkBalance($request->amount);
-        if (!$chk) {
+        $chk    =   $this->checkBalance($request->amount);
+        if(!$chk){
             return response([
-                'message' => "Insufficient balance, Please recharge your wallet!"
-            ], 400);
+                'message'        => "Insufficient balance, Please recharge your wallet!"
+            ],400);
         }
         $Muplifhgjk = $this->isMultipleOf50__($request->amount);
-        if (!$Muplifhgjk) {
+        if(!$Muplifhgjk){
             return response([
-                'message' => "Amount is not multiple of 50rs!"
-            ], 400);
+                'message'        => "Amount is not multiple of 50rs!"
+            ],400);
         }
-        //  or status = 2 or status = 3
-        $myChallenges = DB::select("select * from challenges where (status != 0) and (c_id = " . $user_id . " OR o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-        if (count($myChallenges) > 0) {
-            return response([
-                'message' => "Already Running Game"
-            ], 400);
-        }
+// 		$myChallenges       =   DB::select("select * from challenges where (status != 0 or status = 2 or status = 3) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+// 		if(count($myChallenges)>0){
+// 			      return response([
+//                 'message'        => "Already Running Game"
+//             ],400);
+// 		}
+
+            if($this->CheckGameActive($user_id)){
+		    	return response([
+                    'message'        => "Already Running Game"
+                ],400);
+		    }
+
+
+
+        // $myChallenges = DB::select("select * from challenges where (status NOT IN (0, 3)) and (c_id = " . $user_id . " OR o_id = " . $user_id . ")
+        //  and deleted_at is null ORDER BY id ASC ");
 
         try {
             //$cname                          =   $this->randomPlayer();
@@ -712,62 +733,67 @@ class ChallengeController extends Controller
         $request->validate([
             'ch_id' => 'required|numeric'
         ]);
-        try {
-            $user_id = Auth::user()->id;
-            $chData = Challenge::find($request->ch_id);
-            $chk = $this->checkBalance($chData->amount);
-            // $chDataChecknotexist     =   Challenge::where('o_id',$user_id)->orWhere('c_id',$user_id)->where('status','!=',0)->count();
+        try
+        {
+            $user_id    =   Auth::user()->id;
+            $chData     =   Challenge::find($request->ch_id);
+            $chk        =   $this->checkBalance($chData->amount);
             // return $chDataChecknotexist;
-            // $chDataChecknotexist     =   Challenge::where('o_id',$user_id)->where('status',2)->count();
-            $myChallenges = DB::select("select * from challenges where (status != 0) and (c_id = " . $user_id . " OR o_id = " . $user_id . ") and deleted_at is null ORDER BY id ASC");
-            if (count($myChallenges) > 0) {
+            $chDataChecknotexist     =   Challenge::where('o_id',$user_id)->where('status',2)->count();
+            // $myChallenges       =   DB::select("select * from challenges where (status != 0) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
+            // if($chDataChecknotexist > 0){
+            //     return response([
+            //         'message'        => "You are already joined with another Match!"
+            //     ],400);
+            // }
+
+            if($this->CheckGameActive($user_id)){
                 return response([
-                    'message' => "You are already joined with another Match!" . count($myChallenges)
-                ], 400);
+                    'message'        => "You are already joined with another Match!"
+                ],400);
             }
 
-            if (!$chk) {
+            if(!$chk){
                 return response([
-                    'message' => "Insufficient balance, Please recharge your wallet!"
-                ], 400);
+                    'message'        => "Insufficient balance, Please recharge your wallet!"
+                ],400);
             }
 
 
-            if ($user_id == $chData->c_id) {
+            if($user_id == $chData->c_id){
                 return response([
-                    'message' => "You cannot accept the game which is created by you!"
-                ], 400);
+                    'message'        => "You cannot accept the game which is created by you!"
+                ],400);
             }
 
-            if ($chData->status == 1) {
+            if($chData->status  ==  1){
                 ChallengeJoin::create([
-                    'user_id' => $user_id,
-                    'ch_id' => $request->ch_id,
-                    'ip' => $request->ip(),
+                    'user_id'       =>   $user_id,
+                    'ch_id'         =>   $request->ch_id,
+                    'ip'            =>   $request->ip(),
                 ]);
 
-                $chData->status = 2;
-                $chData->o_id = $user_id;
-                $chData->oname = Auth::user()->username;
+                $chData->status =   2;
+                $chData->o_id   =   $user_id;
+                $chData->oname  =   Auth::user()->username;
                 $chData->save();
 
-                $walletData = User::find($user_id);
+                $walletData =   User::find($user_id);
                 // $walletData->decrement('wallet',$chData->amount);
                 // return response()->json(['data'=>$chData]);
-                return response()->json(['data' => $chData]);
+                return response()->json(['data'=>$chData]);
             }
             return response([
-                'message' => "Unable to play the game!"
-            ], 400);
-        } catch (\Exception $e) {
+                'message'        => "Unable to play the game!"
+            ],400);
+        }catch (\Exception $e) {
             $bug = $e->getMessage();
             return response([
-                'message' => $bug
-            ], 400);
+                'message'        => $bug
+            ],400);
         }
 
     }
-
 
 
     public function cancelChallenge(Request $request)
@@ -775,115 +801,197 @@ class ChallengeController extends Controller
         $request->validate([
             'ch_id' => 'required|numeric'
         ]);
+
         try {
             $user_id = Auth::user()->id;
             $chData = Challenge::find($request->ch_id);
-            if ($chData->status == 1) {
-                $walletData = User::find($user_id);
-                $walletData->wallet = $walletData->wallet + $chData->amount;
-                $walletData->save();
-                $chData->delete();
 
-                return response()->json(['data' => $request->ch_id]);
+            if ($chData->status == 1) {
+                \Log::debug('Cancel challenge request initiated for User ID ' . $user_id);
+
+                // Get the current user and opponent details
+                $walletDataUser = User::find($user_id); // Current user
+                $walletDataOpponent = User::find($chData->opponent_id); // Opponent user (assuming you store opponent_id in challenges)
+
+                // Add the amount back to both users' wallets
+                $walletDataUser->wallet += $chData->amount;
+                $walletDataOpponent->wallet += $chData->amount;
+
+                // Save both wallet updates
+                $walletDataUser->save();
+                $walletDataOpponent->save();
+
+                // Mark the challenge as canceled
+                $chData->is_cancel = 1;
+                $chData->save();
+
+                // Log the amount credited back
+                \Log::debug('Challenge canceled. Amount ' . $chData->amount . ' credited back to User ID ' . $user_id . ' and Opponent ID ' . $chData->opponent_id);
+
+                return response()->json(['data' => $request->ch_id, 'message' => 'Challenge canceled successfully.']);
             }
+
             return response([
                 'message' => "Unable to cancel the game!"
             ], 400);
+
         } catch (\Exception $e) {
-            $bug = $e->getMessage();
+            \Log::error('Error canceling challenge: ' . $e->getMessage());
             return response([
-                'message' => $bug
+                'message' => $e->getMessage()
             ], 400);
         }
-
     }
+
+
 
     public function cancelChallengeReq(Request $request)
     {
         $request->validate([
             'ch_id' => 'required|numeric'
         ]);
-        try {
-            $chData = Challenge::find($request->ch_id);
-            $user_id = Auth::user()->id;
-            if ($chData->status == 2) {
-                $chData->status = 1;
+        try
+        {
+            $chData     =   Challenge::find($request->ch_id);
+            $user_id    =   Auth::user()->id;
+            if($chData->status  ==  2){
+                $chData->status =   1;
                 // $walletData =   User::find($chData->o_id);
                 // $walletData->wallet = $walletData->wallet + $chData->amount;
                 // $walletData->save();
-                $chData->o_id = NULL;
-                $chData->oname = NULL;
+                $chData->o_id   =   NULL;
+                $chData->oname  =   NULL;
                 $chData->save();
-                return response()->json(['data' => $chData]);
+                return response()->json(['data'=>$chData]);
             }
             return response([
-                'message' => "Unable to cancel request!"
-            ], 400);
-        } catch (\Exception $e) {
+                'message'        => "Unable to cancel request!"
+            ],400);
+        }catch (\Exception $e) {
             $bug = $e->getMessage();
             return response([
-                'message' => $bug
-            ], 400);
+                'message'        => $bug
+            ],400);
         }
 
     }
+
+    // this is new with the help of the callback
     public function add_rommcode(Request $r)
     {
-        // Validate the request parameters
         $r->validate([
             'id' => 'required',
             'code' => 'required'
         ]);
 
-        // Initialize cURL session
-        $curl = curl_init();
+        $payload = [
+            'roomCode' => $r->code,
+            'purpose' => 'Check'
+        ];
 
-        // Set cURL options
-        curl_setopt_array($curl, [
-            // Use the tested API URL
-            CURLOPT_URL => "https://apiv2.ludoadda.co.in/api/all/result?roomcode=" . $r->code . "&apikey=733f4afa",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
-        ]);
+        try {
+            $client = new Client();
 
-        // Execute cURL request and capture response
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
+            \Log::info('Request Payload: ', $payload);
 
-        // Log the full API response for debugging
-        \Log::info('Full API Response add_rommcode function: ', [$response]);
+            $response = $client->post('https://akadda.com/api/cashfree-callback1', [
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ],
+                'json' => $payload,
+                'timeout' => 30
+            ]);
 
-        // Close cURL session
-        curl_close($curl);
+            $responseData = json_decode($response->getBody()->getContents());
+            \Log::info('API Response: ', (array)$responseData);
 
-        // Handle potential cURL errors
-        if ($err) {
-            return redirect('/challenge-detail/' . $r->id)->with('error', 'Room Code Error');
-        } else {
-            // Decode the JSON response from the API
-            $responses = json_decode($response);
+            if (isset($responseData->success) && $responseData->success) {
+                if (isset($responseData->data->ludoKing->_tableId)) {
+                    $tableId = $responseData->data->ludoKing->_tableId;
 
-            // Check if the API returned a valid room code and status
-            if (isset($responses->result->roomcode) && isset($responses->result->status)) {
-                // Find the challenge by ID
-                $dataa = Challenge::where('id', $r->id)->first();
+                    $dataa = Challenge::where('id', $r->id)->first();
 
-                // If the challenge exists and is in a valid state, update the room code
-                if ($dataa && $dataa->status >= 3) {
-                    Challenge::where('id', $r->id)->update(['rcode' => $r->code]);
-                    return redirect('/challenge-detail/' . $r->id);
+                    if ($dataa && $dataa->status >= 3) {
+                        Challenge::where('id', $r->id)->update(['rcode' => $r->code]);
+                        return redirect('/challenge-detail/' . $r->id);
+                    } else {
+                        return redirect('/challenge-detail/' . $r->id)->with('error', 'Already Cancelled or Invalid State');
+                    }
                 } else {
-                    return redirect('/challenge-detail/' . $r->id)->with('error', 'Already Cancelled');
+                    \Log::warning('Room code not found in response data!', (array)$responseData);
+                    return redirect('/challenge-detail/' . $r->id)->with('error', 'Room code not found in response data!');
                 }
             } else {
+                \Log::warning('Room not found or success flag is false', (array)$responseData);
                 return redirect('/challenge-detail/' . $r->id)->with('error', 'Room not found!');
             }
+        } catch (\Exception $e) {
+            \Log::error('Error in add_rommcode function: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect('/challenge-detail/' . $r->id)->with('error', 'Room Code Error');
         }
     }
+
+
+
+    // this is the old roomcode via the api
+    // public function add_rommcode(Request $r)
+    // {
+    //     // Validate the request parameters
+    //     $r->validate([
+    //         'id' => 'required',
+    //         'code' => 'required'
+    //     ]);
+
+    //     // Initialize cURL session
+    //     $curl = curl_init();
+
+    //     // Set cURL options
+    //     curl_setopt_array($curl, [
+    //         // Use the tested API URL
+    //         CURLOPT_URL => "https://apiv2.ludoadda.co.in/api/all/result?roomcode=" . $r->code . "&apikey=733f4afa",
+    //         CURLOPT_RETURNTRANSFER => true,
+    //         CURLOPT_ENCODING => "",
+    //         CURLOPT_MAXREDIRS => 10,
+    //         CURLOPT_TIMEOUT => 30,
+    //         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    //         CURLOPT_CUSTOMREQUEST => "GET",
+    //     ]);
+
+    //     // Execute cURL request and capture response
+    //     $response = curl_exec($curl);
+    //     $err = curl_error($curl);
+
+    //     // Log the full API response for debugging
+    //     \Log::info('Full API Response add_rommcode function: ', [$response]);
+
+    //     // Close cURL session
+    //     curl_close($curl);
+
+    //     // Handle potential cURL errors
+    //     if ($err) {
+    //         return redirect('/challenge-detail/' . $r->id)->with('error', 'Room Code Error');
+    //     } else {
+    //         // Decode the JSON response from the API
+    //         $responses = json_decode($response);
+
+    //         // Check if the API returned a valid room code and status
+    //         if (isset($responses->result->roomcode) && isset($responses->result->status)) {
+    //             // Find the challenge by ID
+    //             $dataa = Challenge::where('id', $r->id)->first();
+
+    //             // If the challenge exists and is in a valid state, update the room code
+    //             if ($dataa && $dataa->status >= 3) {
+    //                 Challenge::where('id', $r->id)->update(['rcode' => $r->code]);
+    //                 return redirect('/challenge-detail/' . $r->id);
+    //             } else {
+    //                 return redirect('/challenge-detail/' . $r->id)->with('error', 'Already Cancelled');
+    //             }
+    //         } else {
+    //             return redirect('/challenge-detail/' . $r->id)->with('error', 'Room not found!');
+    //         }
+    //     }
+    // }
+
 
     public function add_rommcode_automaticByController($id)
     {
@@ -905,7 +1013,7 @@ class ChallengeController extends Controller
         $response = curl_exec($curl);
         $err = curl_error($curl);
         // Log the full API response for debugging
-        \Log::info('Full API Response: ', [$response]);
+        // \Log::info('Full API Response: ', [$response]);
         // Close the cURL session
         curl_close($curl);
 

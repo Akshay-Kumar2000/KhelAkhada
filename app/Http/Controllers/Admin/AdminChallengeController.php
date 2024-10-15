@@ -113,41 +113,126 @@ class AdminChallengeController extends Controller
             return '<span style="color:orange;font-weight:900;">Lost</span>';
         }
     }
+
+    // this is the new api callback function for the roomcode
     public function details($id)
     {
-        $challenge  = Challenge::with(['creator','opponent','result','usersresult','transactions'])->where('id',$id)->first();
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-        	CURLOPT_URL => "https://apiv2.ludoadda.co.in/api/all/result?roomcode=".$challenge->rcode."&apikey=5c055f88",
-        	CURLOPT_RETURNTRANSFER => true,
-        	CURLOPT_ENCODING => "",
-        	CURLOPT_MAXREDIRS => 10,
-        	CURLOPT_TIMEOUT => 30,
-        	CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        	CURLOPT_CUSTOMREQUEST => "GET"
-        ]);
+        // Fetch the challenge details along with related data
+        $challenge = Challenge::with(['creator', 'opponent', 'result', 'usersresult', 'transactions'])->where('id', $id)->first();
+        $RoomCode = $challenge->rcode;
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
+        // Prepare the payload for the new API
+        $payload = [
+            'roomCode' => $RoomCode,
+            'purpose'  => 'result'  // Set purpose to "Result"
+        ];
 
-        curl_close($curl);
+        try {
+            // Initialize Guzzle client
+            $client = new \GuzzleHttp\Client();
 
-        if ($err) {
-            return $err;
-        } else {
-            $dataaa = json_decode($response);
-            if(isset($dataaa->result->ownerid) && $dataaa->status){
-                $dataa = $dataaa->result;
-                $CreatorPlayer = 2;
-                $resultowner = isset($dataa->ownerstatus) ? $this->ApiResult($dataa->ownerstatus) : "";
-                $resultplayer1 = isset($dataa->player1status) ? $this->ApiResult($dataa->player1status) : "";
-            }else{
-                $resultplayer1 = $this->ApiResult("Hold");
-                $resultowner = $this->ApiResult("Hold");
+            // Send the POST request to the new API endpoint
+            $response = $client->post('https://akadda.com/api/cashfree-callback1', [
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ],
+                'json'    => $payload,  // Guzzle automatically converts array to JSON
+                'timeout' => 30
+            ]);
+
+            // Decode the JSON response from the API
+            $responseData = json_decode($response->getBody()->getContents());
+
+            // Check if the API response indicates success
+            if (isset($responseData->success) && $responseData->success) {
+                if (isset($responseData->data->result)) {
+                    // Extract the game result data
+                    $gameResult = $responseData->data->result;
+
+                    // Default statuses to "Hold" before updating
+                    $resultowner = $this->ApiResult("Hold");
+                    $resultplayer1 = $this->ApiResult("Hold");
+
+                    // Check if the game status is "Running" or "Finished"
+                    if ($gameResult->eStatus == 'Running') {
+                        $resultowner = $this->ApiResult('Playing');
+                        $resultplayer1 = $this->ApiResult('Playing');
+                    } elseif ($gameResult->eStatus == 'Finished') {
+                        // If game is finished, directly use the API status for each player
+                        $creatorId = $challenge->creator_id;
+                        $statusPlayer1 = $gameResult->aPlayers[0]->eStatus;
+                        $statusPlayer2 = $gameResult->aPlayers[1]->eStatus;
+
+                        // Map the statuses to the right players
+                        if ($gameResult->aPlayers[0]->_userId == $creatorId) {
+                            $resultowner = $this->ApiResult($statusPlayer1);
+                            $resultplayer1 = $this->ApiResult($statusPlayer2);
+                        } else {
+                            $resultowner = $this->ApiResult($statusPlayer2);
+                            $resultplayer1 = $this->ApiResult($statusPlayer1);
+                        }
+                    } else {
+                        // Set default values if the game is in an unexpected state
+                        $resultowner = $this->ApiResult("Hold");
+                        $resultplayer1 = $this->ApiResult("Hold");
+                    }
+                } else {
+                    // No game result data found, set default values
+                    $resultowner = $this->ApiResult("Hold");
+                    $resultplayer1 = $this->ApiResult("Hold");
+                }
+            } else {
+                // API response indicates failure
+                $resultowner = $this->ApiResult("Updating..");
+                $resultplayer1 = $this->ApiResult("Updating..");
             }
+        } catch (\Exception $e) {
+            // Log the exception error message
+            // \Log::error('Error in fetching game result: ' . $e->getMessage());
+            $resultowner = $this->ApiResult("Error");
+            $resultplayer1 = $this->ApiResult("Error");
         }
-        return view('admin/challenge/details',compact('challenge','resultowner','resultplayer1'));
+
+        // Return the view with the challenge and result data
+        return view('admin/challenge/details', compact('challenge', 'resultowner', 'resultplayer1'));
     }
+
+    // this is the old api for the roomcode
+    // public function details($id)
+    // {
+    //     $challenge  = Challenge::with(['creator','opponent','result','usersresult','transactions'])->where('id',$id)->first();
+    //     $curl = curl_init();
+    //     curl_setopt_array($curl, [
+    //     	CURLOPT_URL => "https://apiv2.ludoadda.co.in/api/all/result?roomcode=".$challenge->rcode."&apikey=5c055f88",
+    //     	CURLOPT_RETURNTRANSFER => true,
+    //     	CURLOPT_ENCODING => "",
+    //     	CURLOPT_MAXREDIRS => 10,
+    //     	CURLOPT_TIMEOUT => 30,
+    //     	CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    //     	CURLOPT_CUSTOMREQUEST => "GET"
+    //     ]);
+
+    //     $response = curl_exec($curl);
+    //     $err = curl_error($curl);
+
+    //     curl_close($curl);
+
+    //     if ($err) {
+    //         return $err;
+    //     } else {
+    //         $dataaa = json_decode($response);
+    //         if(isset($dataaa->result->ownerid) && $dataaa->status){
+    //             $dataa = $dataaa->result;
+    //             $CreatorPlayer = 2;
+    //             $resultowner = isset($dataa->ownerstatus) ? $this->ApiResult($dataa->ownerstatus) : "";
+    //             $resultplayer1 = isset($dataa->player1status) ? $this->ApiResult($dataa->player1status) : "";
+    //         }else{
+    //             $resultplayer1 = $this->ApiResult("Hold");
+    //             $resultowner = $this->ApiResult("Hold");
+    //         }
+    //     }
+    //     return view('admin/challenge/details',compact('challenge','resultowner','resultplayer1'));
+    // }
 
     public function cancelGame(Request $request)
     {

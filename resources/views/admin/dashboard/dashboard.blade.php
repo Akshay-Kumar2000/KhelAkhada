@@ -376,24 +376,29 @@
 
         </div>
     </div>
-    <!-- push external js -->
-    @push('script')
+        <!-- push external js -->
+        @push('script')
+        <!-- Include jQuery before any plugin scripts -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- Owl Carousel and other plugin scripts -->
         <script src="{{ asset('plugins/owl.carousel/dist/owl.carousel.min.js') }}"></script>
         <script src="{{ asset('plugins/chartist/dist/chartist.min.js') }}"></script>
         <script src="{{ asset('plugins/flot-charts/jquery.flot.js') }}"></script>
-        <!-- <script src="{{ asset('plugins/flot-charts/jquery.flot.categories.js') }}"></script> -->
         <script src="{{ asset('plugins/flot-charts/curvedLines.js') }}"></script>
         <script src="{{ asset('plugins/flot-charts/jquery.flot.tooltip.min.js') }}"></script>
 
+        <!-- AmCharts and other scripts -->
         <script src="{{ asset('plugins/amcharts/amcharts.js') }}"></script>
         <script src="{{ asset('plugins/amcharts/serial.js') }}"></script>
         <script src="{{ asset('plugins/amcharts/themes/light.js') }}"></script>
 
-
+        <!-- Your custom scripts -->
         <script src="{{ asset('js/widget-statistic.js') }}"></script>
         <script src="{{ asset('js/widget-data.js') }}"></script>
         <script src="{{ asset('js/dashboard-charts.js') }}"></script>
 
+        <!-- Sample alert function -->
         <script>
             window.addEventListener('beforeunload', function(e) {
                 alert('kk');
