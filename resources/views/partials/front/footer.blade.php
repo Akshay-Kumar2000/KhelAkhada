@@ -1,7 +1,7 @@
 <div class="rightContainer">
     <div class="rcBanner flex-center">
-        <div class="rcBanner-img-container"><img src="{{ asset('front/images/KhelAkhada.jpeg') }}" alt=""></div>
-        <div class="rcBanner-text">KhelAkhada<span class="rcBanner-text-bold">Win Real Cash!</span></div>
+        <div class="rcBanner-img-container"><img src="{{ asset('front/images/khelmoj123.jpeg') }}" alt=""></div>
+        <div class="rcBanner-text">akplayers<span class="rcBanner-text-bold">Win Real Cash!</span></div>
 
     </div>
 </div>

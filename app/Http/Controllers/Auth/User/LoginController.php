@@ -209,18 +209,18 @@ class LoginController extends Controller
                     }
 
                     // Check if the user is already logged in from another browser or device
-                    if ($userData->session_id && $userData->session_id !== session()->getId()) {
-                        return response()->json([
-                            'status' => 0,
-                            'message' => 'You are already logged in from another device or browser.'
-                        ], 400);
-                    }
+                    // if ($userData->session_id && $userData->session_id !== session()->getId()) {
+                    //     return response()->json([
+                    //         'status' => 0,
+                    //         'message' => 'You are already logged in from another device or browser.'
+                    //     ], 400);
+                    // }
 
-                    // Generate a new session ID and store it in the database
-                    $sessionId = session()->getId();
-                    $userData->session_id = $sessionId;
-                    $userData->otp = 0; // Clear OTP after successful login
-                    $userData->save();
+                    // // Generate a new session ID and store it in the database
+                    // $sessionId = session()->getId();
+                    // $userData->session_id = $sessionId;
+                    // $userData->otp = 0; // Clear OTP after successful login
+                    // $userData->save();
 
                     // Log the user in
                     Auth::login($userData);

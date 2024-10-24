@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="{{ asset('front/images/KhelAkhada.jpeg') }}" />
-    <title>KhelAkhada | Best online ludo platform</title>
+    <link rel="icon" href="{{ asset('front/images/khelmoj123.jpeg') }}" />
+    <title>akplayers | Best online ludo platform</title>
     <meta content="ApnaLudo" name="description">
     <meta
         content="ludo khelo,online ludo, online games, play with real players, best ludo website, ludo earning, earn by playing ludo, playing ludo king,  ludo contest, Best Ludo website in kota , ludo tournament , ludo khelo paise kamao, khelo ludo, Ludo Players, Ludo king."
@@ -79,9 +79,9 @@
         <div class="divider-y"></div>
         <div class="rightContainer">
             <div class="rcBanner flex-center">
-                <div class="rcBanner-img-container"><img src="{{ asset('front/images/KhelAkhada.jpeg') }}"
+                <div class="rcBanner-img-container"><img src="{{ asset('front/images/khelmoj123.jpeg') }}"
                         alt=""></div>
-                <div class="rcBanner-text">KhelAkhada <span class="rcBanner-text-bold">Win Real Cash!</span></div>
+                <div class="rcBanner-text">akplayers <span class="rcBanner-text-bold">Win Real Cash!</span></div>
             </div>
         </div>
 

@@ -10,7 +10,7 @@
         <div class="ml-0 navLogo d-flex" style=".ml-1 {
   margin-left: ($spacer * .5) !important;
 }">
-            <img src="{{ asset('front/images/KhelAkhada.jpeg') }}" alt="" style="width: 65px;">
+            <img src="{{ asset('front/images/khelmoj123.jpeg') }}" alt="" style="width: 65px;">
         </div>
     </a>
     <script type="text/javascript">

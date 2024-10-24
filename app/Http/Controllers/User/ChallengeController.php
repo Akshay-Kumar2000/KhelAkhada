@@ -22,6 +22,11 @@ use Hash;
 use Carbon\Carbon;
 
 use Illuminate\Support\Facades\Log;
+// use App\Models\ChallengeResult; // Make sure to import the model
+
+use App\ChallengeResult;
+
+use App\Http\Controllers\User\UserResultController;
 
 use GuzzleHttp\Client;
 
@@ -652,16 +657,22 @@ class ChallengeController extends Controller
     }
 
     public function CheckGameActive($user_id){
-        $result = false;
-        $myChallenges       =   DB::select("select `id` from challenges where (status != 0) and (c_id = ".$user_id." OR o_id = ".$user_id.") and deleted_at is null ORDER BY id ASC");
-        foreach($myChallenges as $row){
-            $rslUpload  =  UserResult::where('ch_id',$row->id)->where('user_id',$user_id)->count();
-            if($rslUpload == 0){
-                $result = true;
-            }
+        // Check for any active challenges where the user is involved
+        $myChallenges = DB::select("SELECT `id` FROM challenges WHERE (status != 0) AND (c_id = ? OR o_id = ?) AND deleted_at IS NULL", [$user_id, $user_id]);
+
+        // If no challenges found, return false
+        if (empty($myChallenges)) {
+            return false;
         }
-        return $result;
+
+        // Check if the user has any results for these challenges
+        $activeChallengeIds = array_column($myChallenges, 'id');
+        $rslUploadCount = UserResult::whereIn('ch_id', $activeChallengeIds)->where('user_id', $user_id)->count();
+
+        // If the count is equal to the number of active challenges, return false; otherwise, return true
+        return $rslUploadCount < count($myChallenges);
     }
+
     public function create(Request $request)
     {
 	   $user_id            =   Auth::user()->id;
@@ -806,43 +817,79 @@ class ChallengeController extends Controller
             $user_id = Auth::user()->id;
             $chData = Challenge::find($request->ch_id);
 
-            if ($chData->status == 1) {
-                \Log::debug('Cancel challenge request initiated for User ID ' . $user_id);
+            if (!$chData) {
+                return response()->json(['message' => 'Challenge not found!'], 404);
+            }
 
-                // Get the current user and opponent details
+            // Check if the user is the creator of the challenge
+            if ($chData->c_id !== $user_id) {
+                return response()->json(['message' => 'You are not authorized to cancel this challenge!'], 403);
+            }
+
+            // Check if the challenge is still active (not accepted)
+            if ($chData->status == 1) { // Assuming status 1 means Active
+                \Log::debug('Cancel challenge request initiated for User ID ' . $user_id . ' for Challenge ID ' . $chData->id);
+
+                // Get the current user details
                 $walletDataUser = User::find($user_id); // Current user
-                $walletDataOpponent = User::find($chData->opponent_id); // Opponent user (assuming you store opponent_id in challenges)
 
-                // Add the amount back to both users' wallets
-                $walletDataUser->wallet += $chData->amount;
-                $walletDataOpponent->wallet += $chData->amount;
+                // Handle case where opponent is NULL
+                if (!is_null($chData->o_id)) {
+                    $walletDataOpponent = User::find($chData->o_id); // Opponent user
 
-                // Save both wallet updates
-                $walletDataUser->save();
-                $walletDataOpponent->save();
+                    if (!$walletDataUser || !$walletDataOpponent) {
+                        \Log::error('User or opponent not found for challenge ID ' . $chData->id);
+                        return response()->json(['message' => 'User or opponent not found!'], 404);
+                    }
 
-                // Mark the challenge as canceled
-                $chData->is_cancel = 1;
+                    // Add the amount back to both users' wallets
+                    $walletDataUser->wallet += $chData->amount;
+                    $walletDataOpponent->wallet += $chData->amount;
+
+                    // Save both wallet updates
+                    $walletDataUser->save();
+                    $walletDataOpponent->save();
+                } else {
+                    // No opponent, credit only the current user
+                    \Log::debug('No opponent found, crediting back only to the current user.');
+                    $walletDataUser->wallet += $chData->amount;
+                    $walletDataUser->save();
+                }
+
+                // Update or insert into `challenge_results` table
+                $challengeResult = ChallengeResult::where('ch_id', $chData->id)->first();
+                if ($challengeResult) {
+                    $challengeResult->is_cancel = 1;
+                    $challengeResult->user_id = $user_id; // Set the user who canceled the challenge
+                    $challengeResult->sub_by = 'User'; // Indicate that the user canceled the challenge
+                    $challengeResult->save();
+                } else {
+                    // If no record exists, create a new entry in `challenge_results`
+                    ChallengeResult::create([
+                        'ch_id' => $chData->id,
+                        'user_id' => $user_id,
+                        'sub_by' => 'User',
+                        'is_cancel' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+
+                // Mark the challenge as canceled in the `challenges` table
+                $chData->status = 0; // Update status to 0 to indicate cancellation
                 $chData->save();
 
-                // Log the amount credited back
-                \Log::debug('Challenge canceled. Amount ' . $chData->amount . ' credited back to User ID ' . $user_id . ' and Opponent ID ' . $chData->opponent_id);
-
+                \Log::debug('Challenge canceled. Amount ' . $chData->amount . ' credited back to User ID ' . $user_id);
                 return response()->json(['data' => $request->ch_id, 'message' => 'Challenge canceled successfully.']);
             }
 
-            return response([
-                'message' => "Unable to cancel the game!"
-            ], 400);
+            return response()->json(['message' => "Cannot cancel this challenge as it has already been accepted or completed."], 400);
 
         } catch (\Exception $e) {
             \Log::error('Error canceling challenge: ' . $e->getMessage());
-            return response([
-                'message' => $e->getMessage()
-            ], 400);
+            return response()->json(['message' => $e->getMessage()], 400);
         }
     }
-
 
 
     public function cancelChallengeReq(Request $request)
@@ -850,31 +897,36 @@ class ChallengeController extends Controller
         $request->validate([
             'ch_id' => 'required|numeric'
         ]);
-        try
-        {
-            $chData     =   Challenge::find($request->ch_id);
-            $user_id    =   Auth::user()->id;
-            if($chData->status  ==  2){
-                $chData->status =   1;
-                // $walletData =   User::find($chData->o_id);
-                // $walletData->wallet = $walletData->wallet + $chData->amount;
-                // $walletData->save();
-                $chData->o_id   =   NULL;
-                $chData->oname  =   NULL;
-                $chData->save();
-                return response()->json(['data'=>$chData]);
-            }
-            return response([
-                'message'        => "Unable to cancel request!"
-            ],400);
-        }catch (\Exception $e) {
-            $bug = $e->getMessage();
-            return response([
-                'message'        => $bug
-            ],400);
-        }
 
+        try {
+            $chData = Challenge::find($request->ch_id);
+            $user_id = Auth::user()->id;
+
+            if ($chData->status == 2) { // Assuming status 2 means pending join or active
+                $this->setChStatus($chData->id, 0); // Update challenge status to canceled (0)
+
+                // Log cancellation in challenge_results table
+                $this->setChResult($chData->id, 1, $user_id); // Set is_cancel to 1
+
+                // Remove opponent information and save
+                $chData->status = 0; // Set status to 0 for cancellation
+                $chData->o_id = NULL;
+                $chData->oname = NULL;
+                $chData->save();
+
+                return response()->json(['data' => $chData, 'message' => 'Challenge request canceled successfully.']);
+            }
+
+            return response(['message' => "Unable to cancel request!"], 400);
+
+        } catch (\Exception $e) {
+            $bug = $e->getMessage();
+            return response(['message' => $bug], 400);
+        }
     }
+
+
+
 
     // this is new with the help of the callback
     public function add_rommcode(Request $r)
